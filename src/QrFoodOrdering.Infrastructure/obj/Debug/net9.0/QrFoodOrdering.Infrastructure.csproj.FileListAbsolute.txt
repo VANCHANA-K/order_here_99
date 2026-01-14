@@ -1,0 +1,17 @@
+/Users/viic/Desktop/project c# 7day/qr-food-ordering-platform/src/QrFoodOrdering.Infrastructure/bin/Debug/net9.0/QrFoodOrdering.Infrastructure.deps.json
+/Users/viic/Desktop/project c# 7day/qr-food-ordering-platform/src/QrFoodOrdering.Infrastructure/bin/Debug/net9.0/QrFoodOrdering.Infrastructure.dll
+/Users/viic/Desktop/project c# 7day/qr-food-ordering-platform/src/QrFoodOrdering.Infrastructure/bin/Debug/net9.0/QrFoodOrdering.Infrastructure.pdb
+/Users/viic/Desktop/project c# 7day/qr-food-ordering-platform/src/QrFoodOrdering.Infrastructure/bin/Debug/net9.0/QrFoodOrdering.Application.dll
+/Users/viic/Desktop/project c# 7day/qr-food-ordering-platform/src/QrFoodOrdering.Infrastructure/bin/Debug/net9.0/QrFoodOrdering.Domain.dll
+/Users/viic/Desktop/project c# 7day/qr-food-ordering-platform/src/QrFoodOrdering.Infrastructure/bin/Debug/net9.0/QrFoodOrdering.Application.pdb
+/Users/viic/Desktop/project c# 7day/qr-food-ordering-platform/src/QrFoodOrdering.Infrastructure/bin/Debug/net9.0/QrFoodOrdering.Domain.pdb
+/Users/viic/Desktop/project c# 7day/qr-food-ordering-platform/src/QrFoodOrdering.Infrastructure/obj/Debug/net9.0/QrFoodOrdering.Infrastructure.csproj.AssemblyReference.cache
+/Users/viic/Desktop/project c# 7day/qr-food-ordering-platform/src/QrFoodOrdering.Infrastructure/obj/Debug/net9.0/QrFoodOrdering.Infrastructure.GeneratedMSBuildEditorConfig.editorconfig
+/Users/viic/Desktop/project c# 7day/qr-food-ordering-platform/src/QrFoodOrdering.Infrastructure/obj/Debug/net9.0/QrFoodOrdering.Infrastructure.AssemblyInfoInputs.cache
+/Users/viic/Desktop/project c# 7day/qr-food-ordering-platform/src/QrFoodOrdering.Infrastructure/obj/Debug/net9.0/QrFoodOrdering.Infrastructure.AssemblyInfo.cs
+/Users/viic/Desktop/project c# 7day/qr-food-ordering-platform/src/QrFoodOrdering.Infrastructure/obj/Debug/net9.0/QrFoodOrdering.Infrastructure.csproj.CoreCompileInputs.cache
+/Users/viic/Desktop/project c# 7day/qr-food-ordering-platform/src/QrFoodOrdering.Infrastructure/obj/Debug/net9.0/QrFoodOr.DE0DAD8C.Up2Date
+/Users/viic/Desktop/project c# 7day/qr-food-ordering-platform/src/QrFoodOrdering.Infrastructure/obj/Debug/net9.0/QrFoodOrdering.Infrastructure.dll
+/Users/viic/Desktop/project c# 7day/qr-food-ordering-platform/src/QrFoodOrdering.Infrastructure/obj/Debug/net9.0/refint/QrFoodOrdering.Infrastructure.dll
+/Users/viic/Desktop/project c# 7day/qr-food-ordering-platform/src/QrFoodOrdering.Infrastructure/obj/Debug/net9.0/QrFoodOrdering.Infrastructure.pdb
+/Users/viic/Desktop/project c# 7day/qr-food-ordering-platform/src/QrFoodOrdering.Infrastructure/obj/Debug/net9.0/ref/QrFoodOrdering.Infrastructure.dll

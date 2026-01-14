@@ -1,0 +1,11 @@
+/Users/viic/Desktop/project c# 7day/qr-food-ordering-platform/src/QrFoodOrdering.Domain/bin/Debug/net9.0/QrFoodOrdering.Domain.deps.json
+/Users/viic/Desktop/project c# 7day/qr-food-ordering-platform/src/QrFoodOrdering.Domain/bin/Debug/net9.0/QrFoodOrdering.Domain.dll
+/Users/viic/Desktop/project c# 7day/qr-food-ordering-platform/src/QrFoodOrdering.Domain/bin/Debug/net9.0/QrFoodOrdering.Domain.pdb
+/Users/viic/Desktop/project c# 7day/qr-food-ordering-platform/src/QrFoodOrdering.Domain/obj/Debug/net9.0/QrFoodOrdering.Domain.GeneratedMSBuildEditorConfig.editorconfig
+/Users/viic/Desktop/project c# 7day/qr-food-ordering-platform/src/QrFoodOrdering.Domain/obj/Debug/net9.0/QrFoodOrdering.Domain.AssemblyInfoInputs.cache
+/Users/viic/Desktop/project c# 7day/qr-food-ordering-platform/src/QrFoodOrdering.Domain/obj/Debug/net9.0/QrFoodOrdering.Domain.AssemblyInfo.cs
+/Users/viic/Desktop/project c# 7day/qr-food-ordering-platform/src/QrFoodOrdering.Domain/obj/Debug/net9.0/QrFoodOrdering.Domain.csproj.CoreCompileInputs.cache
+/Users/viic/Desktop/project c# 7day/qr-food-ordering-platform/src/QrFoodOrdering.Domain/obj/Debug/net9.0/QrFoodOrdering.Domain.dll
+/Users/viic/Desktop/project c# 7day/qr-food-ordering-platform/src/QrFoodOrdering.Domain/obj/Debug/net9.0/refint/QrFoodOrdering.Domain.dll
+/Users/viic/Desktop/project c# 7day/qr-food-ordering-platform/src/QrFoodOrdering.Domain/obj/Debug/net9.0/QrFoodOrdering.Domain.pdb
+/Users/viic/Desktop/project c# 7day/qr-food-ordering-platform/src/QrFoodOrdering.Domain/obj/Debug/net9.0/ref/QrFoodOrdering.Domain.dll

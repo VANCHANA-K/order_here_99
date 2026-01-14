@@ -1,0 +1,23 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v9.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v9.0": {
+      "QrFoodOrdering.Domain/1.0.0": {
+        "runtime": {
+          "QrFoodOrdering.Domain.dll": {}
+        }
+      }
+    }
+  },
+  "libraries": {
+    "QrFoodOrdering.Domain/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    }
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "version": 2,
+  "dgSpecHash": "laYLqi/6GyY=",
+  "success": true,
+  "projectFilePath": "/Users/viic/Desktop/project c# 7day/qr-food-ordering-platform/src/QrFoodOrdering.Api/QrFoodOrdering.Api.csproj",
+  "expectedPackageFiles": [
+    "/Users/viic/.nuget/packages/microsoft.aspnetcore.openapi/9.0.5/microsoft.aspnetcore.openapi.9.0.5.nupkg.sha512",
+    "/Users/viic/.nuget/packages/microsoft.extensions.dependencyinjection.abstractions/10.0.1/microsoft.extensions.dependencyinjection.abstractions.10.0.1.nupkg.sha512",
+    "/Users/viic/.nuget/packages/microsoft.openapi/1.6.17/microsoft.openapi.1.6.17.nupkg.sha512"
+  ],
+  "logs": []
+}

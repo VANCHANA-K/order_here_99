@@ -1,0 +1,202 @@
+{
+  "format": 1,
+  "restore": {
+    "/Users/viic/Desktop/project c# 7day/qr-food-ordering-platform/src/QrFoodOrdering.Infrastructure/QrFoodOrdering.Infrastructure.csproj": {}
+  },
+  "projects": {
+    "/Users/viic/Desktop/project c# 7day/qr-food-ordering-platform/src/QrFoodOrdering.Application/QrFoodOrdering.Application.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "/Users/viic/Desktop/project c# 7day/qr-food-ordering-platform/src/QrFoodOrdering.Application/QrFoodOrdering.Application.csproj",
+        "projectName": "QrFoodOrdering.Application",
+        "projectPath": "/Users/viic/Desktop/project c# 7day/qr-food-ordering-platform/src/QrFoodOrdering.Application/QrFoodOrdering.Application.csproj",
+        "packagesPath": "/Users/viic/.nuget/packages/",
+        "outputPath": "/Users/viic/Desktop/project c# 7day/qr-food-ordering-platform/src/QrFoodOrdering.Application/obj/",
+        "projectStyle": "PackageReference",
+        "configFilePaths": [
+          "/Users/viic/.nuget/NuGet/NuGet.Config"
+        ],
+        "originalTargetFrameworks": [
+          "net9.0"
+        ],
+        "sources": {
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net9.0": {
+            "targetAlias": "net9.0",
+            "projectReferences": {
+              "/Users/viic/Desktop/project c# 7day/qr-food-ordering-platform/src/QrFoodOrdering.Domain/QrFoodOrdering.Domain.csproj": {
+                "projectPath": "/Users/viic/Desktop/project c# 7day/qr-food-ordering-platform/src/QrFoodOrdering.Domain/QrFoodOrdering.Domain.csproj"
+              }
+            }
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
+        },
+        "SdkAnalysisLevel": "9.0.300"
+      },
+      "frameworks": {
+        "net9.0": {
+          "targetAlias": "net9.0",
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "frameworkReferences": {
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/9.0.300/PortableRuntimeIdentifierGraph.json"
+        }
+      }
+    },
+    "/Users/viic/Desktop/project c# 7day/qr-food-ordering-platform/src/QrFoodOrdering.Domain/QrFoodOrdering.Domain.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "/Users/viic/Desktop/project c# 7day/qr-food-ordering-platform/src/QrFoodOrdering.Domain/QrFoodOrdering.Domain.csproj",
+        "projectName": "QrFoodOrdering.Domain",
+        "projectPath": "/Users/viic/Desktop/project c# 7day/qr-food-ordering-platform/src/QrFoodOrdering.Domain/QrFoodOrdering.Domain.csproj",
+        "packagesPath": "/Users/viic/.nuget/packages/",
+        "outputPath": "/Users/viic/Desktop/project c# 7day/qr-food-ordering-platform/src/QrFoodOrdering.Domain/obj/",
+        "projectStyle": "PackageReference",
+        "configFilePaths": [
+          "/Users/viic/.nuget/NuGet/NuGet.Config"
+        ],
+        "originalTargetFrameworks": [
+          "net9.0"
+        ],
+        "sources": {
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net9.0": {
+            "targetAlias": "net9.0",
+            "projectReferences": {}
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
+        },
+        "SdkAnalysisLevel": "9.0.300"
+      },
+      "frameworks": {
+        "net9.0": {
+          "targetAlias": "net9.0",
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "frameworkReferences": {
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/9.0.300/PortableRuntimeIdentifierGraph.json"
+        }
+      }
+    },
+    "/Users/viic/Desktop/project c# 7day/qr-food-ordering-platform/src/QrFoodOrdering.Infrastructure/QrFoodOrdering.Infrastructure.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "/Users/viic/Desktop/project c# 7day/qr-food-ordering-platform/src/QrFoodOrdering.Infrastructure/QrFoodOrdering.Infrastructure.csproj",
+        "projectName": "QrFoodOrdering.Infrastructure",
+        "projectPath": "/Users/viic/Desktop/project c# 7day/qr-food-ordering-platform/src/QrFoodOrdering.Infrastructure/QrFoodOrdering.Infrastructure.csproj",
+        "packagesPath": "/Users/viic/.nuget/packages/",
+        "outputPath": "/Users/viic/Desktop/project c# 7day/qr-food-ordering-platform/src/QrFoodOrdering.Infrastructure/obj/",
+        "projectStyle": "PackageReference",
+        "configFilePaths": [
+          "/Users/viic/.nuget/NuGet/NuGet.Config"
+        ],
+        "originalTargetFrameworks": [
+          "net9.0"
+        ],
+        "sources": {
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net9.0": {
+            "targetAlias": "net9.0",
+            "projectReferences": {
+              "/Users/viic/Desktop/project c# 7day/qr-food-ordering-platform/src/QrFoodOrdering.Application/QrFoodOrdering.Application.csproj": {
+                "projectPath": "/Users/viic/Desktop/project c# 7day/qr-food-ordering-platform/src/QrFoodOrdering.Application/QrFoodOrdering.Application.csproj"
+              },
+              "/Users/viic/Desktop/project c# 7day/qr-food-ordering-platform/src/QrFoodOrdering.Domain/QrFoodOrdering.Domain.csproj": {
+                "projectPath": "/Users/viic/Desktop/project c# 7day/qr-food-ordering-platform/src/QrFoodOrdering.Domain/QrFoodOrdering.Domain.csproj"
+              }
+            }
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
+        },
+        "SdkAnalysisLevel": "9.0.300"
+      },
+      "frameworks": {
+        "net9.0": {
+          "targetAlias": "net9.0",
+          "dependencies": {
+            "Microsoft.Extensions.DependencyInjection.Abstractions": {
+              "target": "Package",
+              "version": "[10.0.1, )"
+            }
+          },
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "frameworkReferences": {
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/9.0.300/PortableRuntimeIdentifierGraph.json"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "dgSpecHash": "kwpuL+qCtnk=",
+  "success": true,
+  "projectFilePath": "/Users/viic/Desktop/project c# 7day/qr-food-ordering-platform/src/QrFoodOrdering.Infrastructure/QrFoodOrdering.Infrastructure.csproj",
+  "expectedPackageFiles": [
+    "/Users/viic/.nuget/packages/microsoft.extensions.dependencyinjection.abstractions/10.0.1/microsoft.extensions.dependencyinjection.abstractions.10.0.1.nupkg.sha512"
+  ],
+  "logs": []
+}

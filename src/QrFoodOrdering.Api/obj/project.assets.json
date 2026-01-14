@@ -1,0 +1,257 @@
+{
+  "version": 3,
+  "targets": {
+    "net9.0": {
+      "Microsoft.AspNetCore.OpenApi/9.0.5": {
+        "type": "package",
+        "dependencies": {
+          "Microsoft.OpenApi": "1.6.17"
+        },
+        "compile": {
+          "lib/net9.0/Microsoft.AspNetCore.OpenApi.dll": {
+            "related": ".xml"
+          }
+        },
+        "runtime": {
+          "lib/net9.0/Microsoft.AspNetCore.OpenApi.dll": {
+            "related": ".xml"
+          }
+        },
+        "frameworkReferences": [
+          "Microsoft.AspNetCore.App"
+        ]
+      },
+      "Microsoft.Extensions.DependencyInjection.Abstractions/10.0.1": {
+        "type": "package",
+        "compile": {
+          "lib/net9.0/Microsoft.Extensions.DependencyInjection.Abstractions.dll": {
+            "related": ".xml"
+          }
+        },
+        "runtime": {
+          "lib/net9.0/Microsoft.Extensions.DependencyInjection.Abstractions.dll": {
+            "related": ".xml"
+          }
+        },
+        "build": {
+          "buildTransitive/net8.0/_._": {}
+        }
+      },
+      "Microsoft.OpenApi/1.6.17": {
+        "type": "package",
+        "compile": {
+          "lib/netstandard2.0/Microsoft.OpenApi.dll": {
+            "related": ".pdb;.xml"
+          }
+        },
+        "runtime": {
+          "lib/netstandard2.0/Microsoft.OpenApi.dll": {
+            "related": ".pdb;.xml"
+          }
+        }
+      },
+      "QrFoodOrdering.Application/1.0.0": {
+        "type": "project",
+        "framework": ".NETCoreApp,Version=v9.0",
+        "dependencies": {
+          "QrFoodOrdering.Domain": "1.0.0"
+        },
+        "compile": {
+          "bin/placeholder/QrFoodOrdering.Application.dll": {}
+        },
+        "runtime": {
+          "bin/placeholder/QrFoodOrdering.Application.dll": {}
+        }
+      },
+      "QrFoodOrdering.Domain/1.0.0": {
+        "type": "project",
+        "framework": ".NETCoreApp,Version=v9.0",
+        "compile": {
+          "bin/placeholder/QrFoodOrdering.Domain.dll": {}
+        },
+        "runtime": {
+          "bin/placeholder/QrFoodOrdering.Domain.dll": {}
+        }
+      },
+      "QrFoodOrdering.Infrastructure/1.0.0": {
+        "type": "project",
+        "framework": ".NETCoreApp,Version=v9.0",
+        "dependencies": {
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "10.0.1",
+          "QrFoodOrdering.Application": "1.0.0",
+          "QrFoodOrdering.Domain": "1.0.0"
+        },
+        "compile": {
+          "bin/placeholder/QrFoodOrdering.Infrastructure.dll": {}
+        },
+        "runtime": {
+          "bin/placeholder/QrFoodOrdering.Infrastructure.dll": {}
+        }
+      }
+    }
+  },
+  "libraries": {
+    "Microsoft.AspNetCore.OpenApi/9.0.5": {
+      "sha512": "yZLOciYlpaOO/mHPOpgeSZTv8Lc7fOOVX40eWJJoGs/S9Ny9CymDuKKQofGE9stXGGM9EEnnuPeq0fhR8kdFfg==",
+      "type": "package",
+      "path": "microsoft.aspnetcore.openapi/9.0.5",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "Icon.png",
+        "PACKAGE.md",
+        "THIRD-PARTY-NOTICES.TXT",
+        "lib/net9.0/Microsoft.AspNetCore.OpenApi.dll",
+        "lib/net9.0/Microsoft.AspNetCore.OpenApi.xml",
+        "microsoft.aspnetcore.openapi.9.0.5.nupkg.sha512",
+        "microsoft.aspnetcore.openapi.nuspec"
+      ]
+    },
+    "Microsoft.Extensions.DependencyInjection.Abstractions/10.0.1": {
+      "sha512": "oIy8fQxxbUsSrrOvgBqlVgOeCtDmrcynnTG+FQufcUWBrwyPfwlUkCDB2vaiBeYPyT+20u9/HeuHeBf+H4F/8g==",
+      "type": "package",
+      "path": "microsoft.extensions.dependencyinjection.abstractions/10.0.1",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "Icon.png",
+        "PACKAGE.md",
+        "THIRD-PARTY-NOTICES.TXT",
+        "buildTransitive/net461/Microsoft.Extensions.DependencyInjection.Abstractions.targets",
+        "buildTransitive/net462/_._",
+        "buildTransitive/net8.0/_._",
+        "buildTransitive/netcoreapp2.0/Microsoft.Extensions.DependencyInjection.Abstractions.targets",
+        "lib/net10.0/Microsoft.Extensions.DependencyInjection.Abstractions.dll",
+        "lib/net10.0/Microsoft.Extensions.DependencyInjection.Abstractions.xml",
+        "lib/net462/Microsoft.Extensions.DependencyInjection.Abstractions.dll",
+        "lib/net462/Microsoft.Extensions.DependencyInjection.Abstractions.xml",
+        "lib/net8.0/Microsoft.Extensions.DependencyInjection.Abstractions.dll",
+        "lib/net8.0/Microsoft.Extensions.DependencyInjection.Abstractions.xml",
+        "lib/net9.0/Microsoft.Extensions.DependencyInjection.Abstractions.dll",
+        "lib/net9.0/Microsoft.Extensions.DependencyInjection.Abstractions.xml",
+        "lib/netstandard2.0/Microsoft.Extensions.DependencyInjection.Abstractions.dll",
+        "lib/netstandard2.0/Microsoft.Extensions.DependencyInjection.Abstractions.xml",
+        "lib/netstandard2.1/Microsoft.Extensions.DependencyInjection.Abstractions.dll",
+        "lib/netstandard2.1/Microsoft.Extensions.DependencyInjection.Abstractions.xml",
+        "microsoft.extensions.dependencyinjection.abstractions.10.0.1.nupkg.sha512",
+        "microsoft.extensions.dependencyinjection.abstractions.nuspec",
+        "useSharedDesignerContext.txt"
+      ]
+    },
+    "Microsoft.OpenApi/1.6.17": {
+      "sha512": "Le+kehlmrlQfuDFUt1zZ2dVwrhFQtKREdKBo+rexOwaCoYP0/qpgT9tLxCsZjsgR5Itk1UKPcbgO+FyaNid/bA==",
+      "type": "package",
+      "path": "microsoft.openapi/1.6.17",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "README.md",
+        "lib/netstandard2.0/Microsoft.OpenApi.dll",
+        "lib/netstandard2.0/Microsoft.OpenApi.pdb",
+        "lib/netstandard2.0/Microsoft.OpenApi.xml",
+        "microsoft.openapi.1.6.17.nupkg.sha512",
+        "microsoft.openapi.nuspec"
+      ]
+    },
+    "QrFoodOrdering.Application/1.0.0": {
+      "type": "project",
+      "path": "../QrFoodOrdering.Application/QrFoodOrdering.Application.csproj",
+      "msbuildProject": "../QrFoodOrdering.Application/QrFoodOrdering.Application.csproj"
+    },
+    "QrFoodOrdering.Domain/1.0.0": {
+      "type": "project",
+      "path": "../QrFoodOrdering.Domain/QrFoodOrdering.Domain.csproj",
+      "msbuildProject": "../QrFoodOrdering.Domain/QrFoodOrdering.Domain.csproj"
+    },
+    "QrFoodOrdering.Infrastructure/1.0.0": {
+      "type": "project",
+      "path": "../QrFoodOrdering.Infrastructure/QrFoodOrdering.Infrastructure.csproj",
+      "msbuildProject": "../QrFoodOrdering.Infrastructure/QrFoodOrdering.Infrastructure.csproj"
+    }
+  },
+  "projectFileDependencyGroups": {
+    "net9.0": [
+      "Microsoft.AspNetCore.OpenApi >= 9.0.5",
+      "QrFoodOrdering.Application >= 1.0.0",
+      "QrFoodOrdering.Infrastructure >= 1.0.0"
+    ]
+  },
+  "packageFolders": {
+    "/Users/viic/.nuget/packages/": {}
+  },
+  "project": {
+    "version": "1.0.0",
+    "restore": {
+      "projectUniqueName": "/Users/viic/Desktop/project c# 7day/qr-food-ordering-platform/src/QrFoodOrdering.Api/QrFoodOrdering.Api.csproj",
+      "projectName": "QrFoodOrdering.Api",
+      "projectPath": "/Users/viic/Desktop/project c# 7day/qr-food-ordering-platform/src/QrFoodOrdering.Api/QrFoodOrdering.Api.csproj",
+      "packagesPath": "/Users/viic/.nuget/packages/",
+      "outputPath": "/Users/viic/Desktop/project c# 7day/qr-food-ordering-platform/src/QrFoodOrdering.Api/obj/",
+      "projectStyle": "PackageReference",
+      "configFilePaths": [
+        "/Users/viic/.nuget/NuGet/NuGet.Config"
+      ],
+      "originalTargetFrameworks": [
+        "net9.0"
+      ],
+      "sources": {
+        "https://api.nuget.org/v3/index.json": {}
+      },
+      "frameworks": {
+        "net9.0": {
+          "targetAlias": "net9.0",
+          "projectReferences": {
+            "/Users/viic/Desktop/project c# 7day/qr-food-ordering-platform/src/QrFoodOrdering.Application/QrFoodOrdering.Application.csproj": {
+              "projectPath": "/Users/viic/Desktop/project c# 7day/qr-food-ordering-platform/src/QrFoodOrdering.Application/QrFoodOrdering.Application.csproj"
+            },
+            "/Users/viic/Desktop/project c# 7day/qr-food-ordering-platform/src/QrFoodOrdering.Infrastructure/QrFoodOrdering.Infrastructure.csproj": {
+              "projectPath": "/Users/viic/Desktop/project c# 7day/qr-food-ordering-platform/src/QrFoodOrdering.Infrastructure/QrFoodOrdering.Infrastructure.csproj"
+            }
+          }
+        }
+      },
+      "warningProperties": {
+        "warnAsError": [
+          "NU1605"
+        ]
+      },
+      "restoreAuditProperties": {
+        "enableAudit": "true",
+        "auditLevel": "low",
+        "auditMode": "direct"
+      },
+      "SdkAnalysisLevel": "9.0.300"
+    },
+    "frameworks": {
+      "net9.0": {
+        "targetAlias": "net9.0",
+        "dependencies": {
+          "Microsoft.AspNetCore.OpenApi": {
+            "target": "Package",
+            "version": "[9.0.5, )"
+          }
+        },
+        "imports": [
+          "net461",
+          "net462",
+          "net47",
+          "net471",
+          "net472",
+          "net48",
+          "net481"
+        ],
+        "assetTargetFallback": true,
+        "warn": true,
+        "frameworkReferences": {
+          "Microsoft.AspNetCore.App": {
+            "privateAssets": "none"
+          },
+          "Microsoft.NETCore.App": {
+            "privateAssets": "all"
+          }
+        },
+        "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/9.0.300/PortableRuntimeIdentifierGraph.json"
+      }
+    }
+  }
+}
