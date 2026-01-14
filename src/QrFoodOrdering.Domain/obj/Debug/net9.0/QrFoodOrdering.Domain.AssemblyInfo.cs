@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("QrFoodOrdering.Domain")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+c7e3df78b2f4cb18e4f2b01eb73ad49d59f5f252")]
 [assembly: System.Reflection.AssemblyProductAttribute("QrFoodOrdering.Domain")]
 [assembly: System.Reflection.AssemblyTitleAttribute("QrFoodOrdering.Domain")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
