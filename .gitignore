@@ -54,3 +54,12 @@ secrets.json
 *.swp
 *.tmp
 *.bak
+
+# .NET build artifacts
+bin/
+obj/
+
+# SQLite local dev
+*.db
+*.db-shm
+*.db-wal

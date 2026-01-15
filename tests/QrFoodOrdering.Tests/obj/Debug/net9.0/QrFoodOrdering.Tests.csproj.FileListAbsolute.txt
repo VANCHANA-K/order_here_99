@@ -101,3 +101,4 @@
 /Users/viic/Desktop/project c# 7day/qr-food-ordering-platform/tests/QrFoodOrdering.Tests/obj/Debug/net9.0/QrFoodOrdering.Tests.pdb
 /Users/viic/Desktop/project c# 7day/qr-food-ordering-platform/tests/QrFoodOrdering.Tests/obj/Debug/net9.0/QrFoodOrdering.Tests.genruntimeconfig.cache
 /Users/viic/Desktop/project c# 7day/qr-food-ordering-platform/tests/QrFoodOrdering.Tests/obj/Debug/net9.0/ref/QrFoodOrdering.Tests.dll
+/Users/viic/Desktop/project c# 7day/qr-food-ordering-platform/tests/QrFoodOrdering.Tests/obj/Debug/net9.0/QrFoodOrdering.Tests.sourcelink.json
