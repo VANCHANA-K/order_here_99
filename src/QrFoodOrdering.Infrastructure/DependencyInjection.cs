@@ -1,12 +1,18 @@
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using QrFoodOrdering.Infrastructure.Persistence;
 
 namespace QrFoodOrdering.Infrastructure;
 
 public static class DependencyInjection
 {
-    public static IServiceCollection AddInfrastructure(this IServiceCollection services)
+    public static IServiceCollection AddInfrastructure(
+        this IServiceCollection services,
+        string connectionString)
     {
-        // Sprint 0 Day1 ยังไม่ผูก DB/External service
+        services.AddDbContext<AppDbContext>(options =>
+            options.UseSqlite(connectionString));
+
         return services;
     }
 }

@@ -15,3 +15,6 @@
 /Users/viic/Desktop/project c# 7day/qr-food-ordering-platform/src/QrFoodOrdering.Infrastructure/obj/Debug/net9.0/refint/QrFoodOrdering.Infrastructure.dll
 /Users/viic/Desktop/project c# 7day/qr-food-ordering-platform/src/QrFoodOrdering.Infrastructure/obj/Debug/net9.0/QrFoodOrdering.Infrastructure.pdb
 /Users/viic/Desktop/project c# 7day/qr-food-ordering-platform/src/QrFoodOrdering.Infrastructure/obj/Debug/net9.0/ref/QrFoodOrdering.Infrastructure.dll
+/Users/viic/Desktop/project c# 7day/qr-food-ordering-platform/src/QrFoodOrdering.Infrastructure/obj/Debug/net9.0/QrFoodOrdering.Infrastructure.sourcelink.json
+/Users/viic/Desktop/project c# 7day/qr-food-ordering-platform/src/QrFoodOrdering.Infrastructure/bin/Debug/net9.0/QrFoodOrdering.Infrastructure.runtimeconfig.json
+/Users/viic/Desktop/project c# 7day/qr-food-ordering-platform/src/QrFoodOrdering.Infrastructure/obj/Debug/net9.0/QrFoodOrdering.Infrastructure.genruntimeconfig.cache

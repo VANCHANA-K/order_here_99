@@ -14,8 +14,13 @@ builder.Services.AddControllers();
 // Application registrations (Sprint 0: simple DI)
 builder.Services.AddScoped<CreateOrder>();
 
+
+
 // Infrastructure registrations (placeholder)
-builder.Services.AddInfrastructure();
+// ✅ Infrastructure registrations (now wired with connection string)
+builder.Services.AddInfrastructure(
+    builder.Configuration.GetConnectionString("Default")!
+);
 
 var app = builder.Build();
 

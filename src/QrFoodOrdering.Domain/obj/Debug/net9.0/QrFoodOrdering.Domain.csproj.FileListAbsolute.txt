@@ -9,3 +9,4 @@
 /Users/viic/Desktop/project c# 7day/qr-food-ordering-platform/src/QrFoodOrdering.Domain/obj/Debug/net9.0/refint/QrFoodOrdering.Domain.dll
 /Users/viic/Desktop/project c# 7day/qr-food-ordering-platform/src/QrFoodOrdering.Domain/obj/Debug/net9.0/QrFoodOrdering.Domain.pdb
 /Users/viic/Desktop/project c# 7day/qr-food-ordering-platform/src/QrFoodOrdering.Domain/obj/Debug/net9.0/ref/QrFoodOrdering.Domain.dll
+/Users/viic/Desktop/project c# 7day/qr-food-ordering-platform/src/QrFoodOrdering.Domain/obj/Debug/net9.0/QrFoodOrdering.Domain.sourcelink.json
