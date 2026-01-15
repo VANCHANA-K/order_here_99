@@ -33,3 +33,4 @@
 /Users/viic/Desktop/project c# 7day/qr-food-ordering-platform/src/QrFoodOrdering.Api/obj/Debug/net9.0/QrFoodOrdering.Api.pdb
 /Users/viic/Desktop/project c# 7day/qr-food-ordering-platform/src/QrFoodOrdering.Api/obj/Debug/net9.0/QrFoodOrdering.Api.genruntimeconfig.cache
 /Users/viic/Desktop/project c# 7day/qr-food-ordering-platform/src/QrFoodOrdering.Api/obj/Debug/net9.0/ref/QrFoodOrdering.Api.dll
+/Users/viic/Desktop/project c# 7day/qr-food-ordering-platform/src/QrFoodOrdering.Api/bin/Debug/net9.0/appsettings.Test.json
