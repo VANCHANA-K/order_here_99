@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using QrFoodOrdering.Infrastructure.Persistence;
+using QrFoodOrdering.Infrastructure.Audit;
 
 namespace QrFoodOrdering.Infrastructure;
 
@@ -13,6 +14,11 @@ public static class DependencyInjection
         services.AddDbContext<AppDbContext>(options =>
             options.UseSqlite(connectionString));
 
+        services.AddSingleton<IAuditLogWriter, FileAuditLogWriter>();
+
         return services;
     }
 }
+
+
+

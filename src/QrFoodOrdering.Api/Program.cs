@@ -36,6 +36,9 @@ var app = builder.Build();
 // - Standardize error response
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 
+// TraceId MUST be before anything else that logs
+app.UseMiddleware<TraceIdMiddleware>();
+
 // 🔐 JWT middleware stub (position locked, no auth logic yet)
 // Purpose:
 // - Define pipeline position only
