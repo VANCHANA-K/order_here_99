@@ -1,5 +1,5 @@
 using QrFoodOrdering.Api.Middleware;
-using QrFoodOrdering.Application.Orders;
+using QrFoodOrdering.Application;
 using QrFoodOrdering.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -15,7 +15,9 @@ builder.Services.AddControllers();
 // builder.Services.AddSwaggerGen();
 
 // Application layer (use-case level)
-builder.Services.AddScoped<CreateOrder>();
+
+// builder.Services.AddScoped<CreateOrder>();
+builder.Services.AddApplication();
 
 // Infrastructure layer (DbContext, persistence)
 builder.Services.AddInfrastructure(
