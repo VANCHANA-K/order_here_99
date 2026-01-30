@@ -20,10 +20,13 @@ builder.Services.AddControllers();
 builder.Services.AddApplication();
 
 // Infrastructure layer (DbContext, persistence)
-builder.Services.AddInfrastructure(
-    builder.Configuration.GetConnectionString("Default")!
-);
 
+
+// builder.Services.AddInfrastructure(
+//     builder.Configuration.GetConnectionString("Default")!
+// );
+
+builder.Services.AddInfrastructure(builder.Configuration);
 
 var app = builder.Build();
 
