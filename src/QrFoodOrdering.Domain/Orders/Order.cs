@@ -22,6 +22,14 @@ public class Order
         }
     }
 
+    // 🔒 Constructor for EF Core only
+    // EF ใช้ constructor นี้ตอน materialize object จาก database
+    // ❌ ห้ามมี logic
+    // ❌ ห้าม set Id / Status / Date
+    private Order()
+    {
+        _items = new List<OrderItem>();
+    }
     public Order(Guid id, DateTime? createdAtUtc = null)
     {
         if (id == Guid.Empty)

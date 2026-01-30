@@ -29,7 +29,7 @@ public sealed class OrderRepository : IOrderRepository
 
     public async Task UpdateAsync(Order order, CancellationToken ct)
     {
-        _db.Orders.Update(order);
+        // With field-backed navigation configured, EF detects new items automatically
         await _db.SaveChangesAsync(ct);
     }
 }
