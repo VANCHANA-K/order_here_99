@@ -67,4 +67,4 @@ obj/
 *.db-shm
 *.db-wal
 
-data/audit/*.log
+**/data/audit/*.log
