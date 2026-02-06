@@ -8,7 +8,7 @@ public class Order
 
     public Guid Id { get; }
     public OrderStatus Status { get; private set; }
-    public DateTime CreatedAtUtc { get; }
+    public DateTime CreatedAtUtc { get; private set; }
     public IReadOnlyCollection<OrderItem> Items => _items.AsReadOnly();
 
     public Money TotalAmount
@@ -77,6 +77,5 @@ public class Order
             throw new DomainException("Order is not open");
     }
 }
-
 
 

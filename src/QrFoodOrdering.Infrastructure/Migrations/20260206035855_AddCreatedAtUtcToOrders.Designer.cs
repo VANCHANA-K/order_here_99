@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using QrFoodOrdering.Infrastructure.Persistence;
 
@@ -10,9 +11,11 @@ using QrFoodOrdering.Infrastructure.Persistence;
 namespace QrFoodOrdering.Infrastructure.Migrations
 {
     [DbContext(typeof(QrFoodOrderingDbContext))]
-    partial class QrFoodOrderingDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260206035855_AddCreatedAtUtcToOrders")]
+    partial class AddCreatedAtUtcToOrders
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "9.0.1");

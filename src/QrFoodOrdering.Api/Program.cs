@@ -1,8 +1,15 @@
 using Microsoft.AspNetCore.Mvc;
+// API Middleware
 using QrFoodOrdering.Api.Contracts.Common;
 using QrFoodOrdering.Api.Middleware;
+// Application
 using QrFoodOrdering.Application;
+using QrFoodOrdering.Application.Common.Idempotency;
+// Infrastructure
 using QrFoodOrdering.Infrastructure;
+// using QrFoodOrdering.Infrastructure.Idempotency;
+
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -48,6 +55,9 @@ builder.Services.Configure<ApiBehaviorOptions>(options =>
 //
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
+
+
+// IIdempotencyStore registered in Infrastructure.AddInfrastructure()
 
 var app = builder.Build();
 
