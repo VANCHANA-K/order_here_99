@@ -13,10 +13,15 @@ public sealed class OrdersController : ControllerBase
 {
     [HttpPost]
     public async Task<ActionResult<CreateOrderResponse>> Create(
+        [FromBody] QrFoodOrdering.Api.Contracts.Orders.CreateOrderRequest request,
+        [FromHeader(Name = "Idempotency-Key")] string? idempotencyKey,
         [FromServices] CreateOrderHandler handler,
         CancellationToken ct)
     {
-        var result = await handler.Handle(new CreateOrderCommand(), ct);
+        var appRequest = new QrFoodOrdering.Application.Orders.CreateOrder.CreateOrderRequest();
+        var result = await handler.Handle(
+            new CreateOrderCommand(appRequest, idempotencyKey),
+            ct);
 
         return CreatedAtAction(
             nameof(GetById),
@@ -28,6 +33,9 @@ public sealed class OrdersController : ControllerBase
     public async Task<IActionResult> AddItem(
         Guid id,
         [FromBody] AddItemRequest request,
+        // 🔹 Sprint 2 — Day 4 (เตรียมไว้): Idempotency-Key สำหรับ AddItem
+        [FromHeader(Name = "Idempotency-Key")] string? idempotencyKey,
+
         [FromServices] AddItemHandler handler,
         CancellationToken ct)
     {
@@ -36,7 +44,9 @@ public sealed class OrdersController : ControllerBase
                 id,
                 request.ProductName,
                 request.Quantity,
-                request.UnitPrice),
+                request.UnitPrice,
+                idempotencyKey
+                ),
             ct);
 
         return NoContent();

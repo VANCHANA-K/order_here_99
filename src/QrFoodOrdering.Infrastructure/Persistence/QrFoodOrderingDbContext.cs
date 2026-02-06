@@ -26,6 +26,10 @@ public sealed class QrFoodOrderingDbContext : DbContext
         // Primary Key
         order.HasKey(o => o.Id);
 
+        // Persist creation timestamp
+        order.Property(o => o.CreatedAtUtc)
+            .IsRequired();
+
         // Ignore computed / derived property
         // TotalAmount is calculated at runtime only
         order.Ignore(o => o.TotalAmount);
