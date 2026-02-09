@@ -1,5 +1,10 @@
 using System.Net;
+using System.Text.Json;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using QrFoodOrdering.Api.Contracts.Common;
+using QrFoodOrdering.Application.Common.Exceptions;
+using QrFoodOrdering.Application.Common.Observability;
 using QrFoodOrdering.Domain.Common;
 
 namespace QrFoodOrdering.Api.Middleware;
@@ -11,13 +16,14 @@ public sealed class ExceptionHandlingMiddleware
 
     public ExceptionHandlingMiddleware(
         RequestDelegate next,
-        ILogger<ExceptionHandlingMiddleware> logger)
+        ILogger<ExceptionHandlingMiddleware> logger
+    )
     {
         _next = next;
         _logger = logger;
     }
 
-    public async Task InvokeAsync(HttpContext context)
+    public async Task InvokeAsync(HttpContext context, ITraceContext trace)
     {
         try
         {
@@ -25,55 +31,100 @@ public sealed class ExceptionHandlingMiddleware
         }
         catch (DomainException ex)
         {
-            await WriteErrorAsync(
+            await WriteError(
                 context,
-                HttpStatusCode.Conflict,
-                "DOMAIN_RULE_VIOLATION",
-                ex.Message);
-        }
-        catch (ArgumentException ex)
-        {
-            await WriteErrorAsync(
-                context,
+                trace.TraceId,
                 HttpStatusCode.BadRequest,
-                "INVALID_ARGUMENT",
-                ex.Message);
+                "DOMAIN_RULE_VIOLATION",
+                ex.Message,
+                ex
+            );
         }
-        catch (InvalidOperationException ex)
+        catch (NotFoundException ex)
         {
-            await WriteErrorAsync(
+            await WriteError(
                 context,
+                trace.TraceId,
                 HttpStatusCode.NotFound,
                 "RESOURCE_NOT_FOUND",
-                ex.Message);
+                ex.Message,
+                ex
+            );
+        }
+        catch (InvalidRequestException ex)
+        {
+            await WriteError(
+                context,
+                trace.TraceId,
+                HttpStatusCode.BadRequest,
+                "INVALID_ARGUMENT",
+                ex.Message,
+                ex
+            );
+        }
+        catch (DbUpdateConcurrencyException ex)
+        {
+            await WriteError(
+                context,
+                trace.TraceId,
+                HttpStatusCode.Conflict,
+                "CONCURRENCY_CONFLICT",
+                "The resource was modified by another request.",
+                ex
+            );
+        }
+        catch (DbUpdateException ex)
+        {
+            await WriteError(
+                context,
+                trace.TraceId,
+                HttpStatusCode.ServiceUnavailable,
+                "INFRA_FAILURE",
+                "A persistence error occurred.",
+                ex
+            );
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Unhandled exception");
-
-            await WriteErrorAsync(
+            await WriteError(
                 context,
+                trace.TraceId,
                 HttpStatusCode.InternalServerError,
                 "INTERNAL_ERROR",
-                "An unexpected error occurred.");
+                "An unexpected error occurred.",
+                ex
+            );
         }
     }
 
-    private static async Task WriteErrorAsync(
+    private async Task WriteError(
         HttpContext context,
-        HttpStatusCode statusCode,
+        string traceId,
+        HttpStatusCode status,
         string code,
-        string message)
+        string message,
+        Exception ex
+    )
     {
-        var traceId = context.Items["X-Trace-Id"]?.ToString()
-                      ?? context.TraceIdentifier;
+        _logger.LogError(
+            ex,
+            "RequestFailed {@data}",
+            new
+            {
+                TraceId = traceId,
+                Path = context.Request.Path.Value,
+                Method = context.Request.Method,
+                StatusCode = (int)status,
+                Code = code,
+            }
+        );
 
-        var response = new ApiErrorResponse(
-            new ApiError(code, message, traceId));
+        if (context.Response.HasStarted)
+            return;
 
-        context.Response.StatusCode = (int)statusCode;
-        context.Response.ContentType = "application/json";
+        context.Response.StatusCode = (int)status;
 
-        await context.Response.WriteAsJsonAsync(response);
+        var payload = new ApiErrorResponse(new ApiError(code, message, traceId));
+        await context.Response.WriteAsJsonAsync(payload);
     }
 }
