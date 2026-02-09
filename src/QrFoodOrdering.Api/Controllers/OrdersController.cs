@@ -4,6 +4,7 @@ using QrFoodOrdering.Application.Orders.AddItem;
 using QrFoodOrdering.Application.Orders.CloseOrder;
 using QrFoodOrdering.Application.Orders.CreateOrder;
 using QrFoodOrdering.Application.Orders.GetOrder;
+using QrFoodOrdering.Application.Common.Exceptions;
 
 namespace QrFoodOrdering.Api.Controllers;
 
@@ -16,17 +17,17 @@ public sealed class OrdersController : ControllerBase
         [FromBody] QrFoodOrdering.Api.Contracts.Orders.CreateOrderRequest request,
         [FromHeader(Name = "Idempotency-Key")] string? idempotencyKey,
         [FromServices] CreateOrderHandler handler,
-        CancellationToken ct)
+        CancellationToken ct
+    )
     {
         var appRequest = new QrFoodOrdering.Application.Orders.CreateOrder.CreateOrderRequest();
-        var result = await handler.Handle(
-            new CreateOrderCommand(appRequest, idempotencyKey),
-            ct);
+        var result = await handler.Handle(new CreateOrderCommand(appRequest, idempotencyKey), ct);
 
         return CreatedAtAction(
             nameof(GetById),
             new { id = result.OrderId },
-            new CreateOrderResponse(result.OrderId));
+            new CreateOrderResponse(result.OrderId)
+        );
     }
 
     [HttpPost("{id:guid}/items")]
@@ -35,9 +36,9 @@ public sealed class OrdersController : ControllerBase
         [FromBody] AddItemRequest request,
         // 🔹 Sprint 2 — Day 4 (เตรียมไว้): Idempotency-Key สำหรับ AddItem
         [FromHeader(Name = "Idempotency-Key")] string? idempotencyKey,
-
         [FromServices] AddItemHandler handler,
-        CancellationToken ct)
+        CancellationToken ct
+    )
     {
         await handler.Handle(
             new AddItemCommand(
@@ -46,8 +47,9 @@ public sealed class OrdersController : ControllerBase
                 request.Quantity,
                 request.UnitPrice,
                 idempotencyKey
-                ),
-            ct);
+            ),
+            ct
+        );
 
         return NoContent();
     }
@@ -56,22 +58,20 @@ public sealed class OrdersController : ControllerBase
     public async Task<ActionResult<OrderResponse>> GetById(
         Guid id,
         [FromServices] GetOrderHandler handler,
-        CancellationToken ct)
+        CancellationToken ct
+    )
     {
-        var result = await handler.Handle(id, ct);
-        if (result is null) return NotFound();
+        var result = await handler.Handle(id, ct) ?? throw new NotFoundException("Order not found");
 
-        return Ok(new OrderResponse(
-            result.OrderId,
-            result.Status,
-            result.TotalAmount));
+        return Ok(new OrderResponse(result.OrderId, result.Status, result.TotalAmount));
     }
 
     [HttpPost("{id:guid}/close")]
     public async Task<IActionResult> Close(
         Guid id,
         [FromServices] CloseOrderHandler handler,
-        CancellationToken ct)
+        CancellationToken ct
+    )
     {
         await handler.Handle(id, ct);
         return NoContent();
