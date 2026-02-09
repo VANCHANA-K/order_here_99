@@ -1,10 +1,10 @@
 using Microsoft.AspNetCore.Mvc;
 using QrFoodOrdering.Api.Contracts.Orders;
+using QrFoodOrdering.Application.Common.Exceptions;
 using QrFoodOrdering.Application.Orders.AddItem;
 using QrFoodOrdering.Application.Orders.CloseOrder;
 using QrFoodOrdering.Application.Orders.CreateOrder;
 using QrFoodOrdering.Application.Orders.GetOrder;
-using QrFoodOrdering.Application.Common.Exceptions;
 
 namespace QrFoodOrdering.Api.Controllers;
 
