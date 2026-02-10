@@ -22,6 +22,9 @@ public sealed class TraceIdMiddleware
         // attach to response for every request
         context.Response.Headers[HeaderName] = traceId;
 
+        // also unify HttpContext.TraceIdentifier so all components see same id
+        context.TraceIdentifier = traceId;
+
         // attach to application-friendly trace context
         if (traceContext is TraceContext tc)
             tc.TraceId = traceId;
