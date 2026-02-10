@@ -6,11 +6,11 @@ public class OrderItem
 {
     public Guid Id { get; private set; }
 
-    public string ProductName { get; private set; }
+    public string ProductName { get; private set; } = default!;
 
     public int Quantity { get; private set; }
 
-    public Money UnitPrice { get; private set; }
+    public Money UnitPrice { get; private set; } = default!;
 
     public Money TotalPrice =>
         new(UnitPrice.Amount * Quantity, UnitPrice.Currency);
