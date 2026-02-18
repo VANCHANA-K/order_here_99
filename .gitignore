@@ -88,3 +88,5 @@ secrets.json
 .config/
 # Ignore local planning docs
 /docs/
+# Ignore backend internal docs
+qr-food-ordering-platform/docs/
