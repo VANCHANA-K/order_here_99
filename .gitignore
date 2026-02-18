@@ -1,8 +1,12 @@
-# OS-specific
+# ================================
+# OS
+# ================================
 .DS_Store
 Thumbs.db
 
-# IDEs and editors
+# ================================
+# IDEs
+# ================================
 .vs/
 .idea/
 .vscode/
@@ -15,9 +19,13 @@ _ReSharper.Caches/
 _ReSharper*/
 *.DotSettings.user
 
-# Build outputs
+# ================================
+# .NET
+# ================================
 [Bb]in/
 [Oo]bj/
+**/bin/
+**/obj/
 [Bb]uild/
 [Ll]og/
 [Ll]ogs/
@@ -42,7 +50,19 @@ project.fragment.lock.json
 publish/
 **/publish/
 
-# Local configuration & secrets
+# ================================
+# Node / Next.js (staff-ui)
+# ================================
+staff-ui/node_modules/
+staff-ui/.next/
+staff-ui/out/
+staff-ui/.turbo/
+staff-ui/.env*
+staff-ui/.vercel/
+
+# ================================
+# Local config & secrets
+# ================================
 appsettings.*.local.json
 appsettings.Local.json
 secrets.json
@@ -50,21 +70,19 @@ secrets.json
 .env.*
 *.local.json
 
-# Misc
-*.swp
-*.tmp
-*.bak
-
-# .NET build artifacts
-bin/
-obj/
-**/bin/
-**/obj/
-
-
+# ================================
 # SQLite local dev
+# ================================
 *.db
 *.db-shm
 *.db-wal
 
 **/data/audit/*.log
+
+# ================================
+# Misc
+# ================================
+*.swp
+*.tmp
+*.bak
+.config/
