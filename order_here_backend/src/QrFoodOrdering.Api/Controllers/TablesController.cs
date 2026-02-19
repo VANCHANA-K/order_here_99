@@ -13,7 +13,8 @@ public sealed class TablesController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<List<GetAllTablesResult>>> GetAll(
         [FromServices] GetAllTablesHandler handler,
-        CancellationToken ct)
+        CancellationToken ct
+    )
     {
         var result = await handler.Handle(ct);
         return Ok(result);

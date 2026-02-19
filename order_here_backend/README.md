@@ -1,20 +1,19 @@
-# Order Here – QR Food Ordering Platform
+# Order Here – Backend (QR Food Ordering Platform)
 
-A production-grade QR Code Food Ordering Platform built with:
+A production-grade QR Code Food Ordering Backend built with:
 
 - ASP.NET Core (.NET 9)
 - Clean Architecture (Domain / Application / Infrastructure / API)
 - SQLite (Development)
 - xUnit (Testing)
 - GitHub Actions CI
-- Next.js (Frontend – Sprint 3)
 
 ---
 
 # 🏗 Repository Structure
 
 ```
-order_here/
+order_here_99/
 ├── order_here_backend/
 │   ├── QrFoodOrdering.sln
 │   ├── src/
@@ -25,8 +24,6 @@ order_here/
 │   └── tests/
 │       └── QrFoodOrdering.Tests
 │
-├── order_here_frontend/   (Next.js App Router)
-│
 └── .github/workflows/
     └── ci.yml
 ```
@@ -35,13 +32,14 @@ order_here/
 
 # 🔧 Prerequisites
 
-## Backend
 - .NET SDK 9.x
 - Git
 
-## Frontend
-- Node.js 18+
-- npm
+Check installed SDK:
+
+```bash
+dotnet --version
+```
 
 ---
 
@@ -49,18 +47,12 @@ order_here/
 
 ```bash
 git clone https://github.com/VANCHANA-K/order_here_99.git
-cd order_here_99
+cd order_here_99/order_here_backend
 ```
 
 ---
 
 # 🟢 Run Backend
-
-Navigate to backend:
-
-```bash
-cd order_here_backend
-```
 
 Restore:
 
@@ -102,6 +94,8 @@ Expected result:
 Test summary: total: X, failed: 0
 ```
 
+All tests must pass before merging.
+
 ---
 
 # 🟢 Health Check
@@ -118,39 +112,11 @@ Expected response:
 }
 ```
 
----
+Response includes:
 
-# 🌐 Run Frontend (Sprint 3)
-
-Navigate:
-
-```bash
-cd order_here_frontend
-```
-
-Install:
-
-```bash
-npm install
-```
-
-Run:
-
-```bash
-npm run dev
-```
-
-Frontend runs at:
-
-```
-http://localhost:3000
-```
-
-Staff Table Page:
-
-```
-http://localhost:3000/staff/tables
-```
+- HTTP 200
+- `x-trace-id` header
+- JSON payload
 
 ---
 
@@ -163,6 +129,15 @@ Backend follows Clean Architecture:
 - Infrastructure → EF Core + SQLite
 - API → HTTP endpoints
 - Tests → Domain & Application validation
+
+Dependency flow:
+
+```
+API → Application → Domain
+Infrastructure → Application
+```
+
+Domain layer has zero external dependencies.
 
 ---
 
@@ -180,21 +155,24 @@ Target solution:
 order_here_backend/QrFoodOrdering.sln
 ```
 
+CI must pass before merge to main.
+
 ---
 
-# 📍 Current Sprint Status
+# 📍 Current Scope (Sprint 3 – Day 1)
 
-## Sprint 3 – Day 1 (Table Management)
+Table Management (Staff Foundation)
 
-Backend:
 - Create Table API
 - Update Table Status
 - Table validation
 - Audit logging
 
-Frontend:
-- Table List Page (Staff)
-- Create Table UI (basic)
+System verified with:
+
+- Successful build
+- Passing test suite
+- Health endpoint validation
 
 ---
 

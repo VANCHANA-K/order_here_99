@@ -49,7 +49,7 @@ order_here/
 
 ```bash
 git clone https://github.com/VANCHANA-K/order_here_99.git
-cd order_here_99
+cd order_here
 ```
 
 ---
