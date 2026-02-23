@@ -1,4 +1,4 @@
-export type TableStatus = "Available" | "Occupied" | "Closed";
+export type TableStatus = "Active" | "Inactive";
 
 export interface TableDto {
   id: string;

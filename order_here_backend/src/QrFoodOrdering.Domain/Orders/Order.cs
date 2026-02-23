@@ -30,6 +30,7 @@ public class Order
     {
         _items = new List<OrderItem>();
     }
+
     public Order(Guid id, DateTime? createdAtUtc = null)
     {
         if (id == Guid.Empty)
@@ -77,5 +78,3 @@ public class Order
             throw new DomainException("Order is not open");
     }
 }
-
-

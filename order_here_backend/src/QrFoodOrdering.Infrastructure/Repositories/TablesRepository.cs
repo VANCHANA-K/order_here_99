@@ -21,9 +21,7 @@ public sealed class TablesRepository : ITablesRepository
         _db.Tables.FirstOrDefaultAsync(x => x.Id == id, ct);
 
     public Task<List<Table>> GetAllAsync(CancellationToken ct) =>
-        _db.Tables
-            .AsNoTracking()
-            .ToListAsync(ct);
+        _db.Tables.AsNoTracking().ToListAsync(ct);
 
     public Task SaveChangesAsync(CancellationToken ct) => _db.SaveChangesAsync(ct);
 }

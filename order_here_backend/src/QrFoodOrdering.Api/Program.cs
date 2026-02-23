@@ -16,6 +16,7 @@ builder.Services.AddControllers();
 // Swagger
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddTransient<ExceptionHandlingMiddleware>();
 
 // CORS (Frontend Dev)
 builder.Services.AddCors(options =>
@@ -48,7 +49,7 @@ builder.Services.Configure<ApiBehaviorOptions>(options =>
 
         var message = string.IsNullOrWhiteSpace(firstError) ? "Invalid request." : firstError;
 
-        var body = new ApiErrorResponse(new ApiError("INVALID_ARGUMENT", message, traceId));
+        var body = new ApiErrorResponse("VALIDATION_ERROR", message, traceId);
 
         return new BadRequestObjectResult(body);
     };
@@ -100,7 +101,9 @@ app.Use(
                 traceId = context.TraceIdentifier;
 
             var payload = new ApiErrorResponse(
-                new ApiError("ENDPOINT_NOT_FOUND", "The requested endpoint was not found.", traceId)
+                "ENDPOINT_NOT_FOUND",
+                "The requested endpoint was not found.",
+                traceId
             );
 
             await context.Response.WriteAsJsonAsync(payload);

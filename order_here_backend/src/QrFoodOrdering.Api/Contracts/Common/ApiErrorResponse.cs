@@ -1,8 +1,9 @@
+using System.Text.Json.Serialization;
+
 namespace QrFoodOrdering.Api.Contracts.Common;
 
-public sealed record ApiErrorResponse(ApiError Error);
-
-public sealed record ApiError(
-    string Code,
-    string Message,
-    string TraceId);
+public sealed record ApiErrorResponse(
+    [property: JsonPropertyName("errorCode")] string ErrorCode,
+    [property: JsonPropertyName("message")] string Message,
+    [property: JsonPropertyName("traceId")] string TraceId
+);
