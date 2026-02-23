@@ -1,130 +1,47 @@
 using System.Net;
 using System.Text.Json;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 using QrFoodOrdering.Api.Contracts.Common;
 using QrFoodOrdering.Application.Common.Exceptions;
-using QrFoodOrdering.Application.Common.Observability;
-using QrFoodOrdering.Domain.Common;
 
 namespace QrFoodOrdering.Api.Middleware;
 
-public sealed class ExceptionHandlingMiddleware
+public sealed class ExceptionHandlingMiddleware : IMiddleware
 {
-    private readonly RequestDelegate _next;
-    private readonly ILogger<ExceptionHandlingMiddleware> _logger;
+    private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
-    public ExceptionHandlingMiddleware(
-        RequestDelegate next,
-        ILogger<ExceptionHandlingMiddleware> logger
-    )
-    {
-        _next = next;
-        _logger = logger;
-    }
-
-    public async Task InvokeAsync(HttpContext context, ITraceContext trace)
+    public async Task InvokeAsync(HttpContext context, RequestDelegate next)
     {
         try
         {
-            await _next(context);
-        }
-        catch (DomainException ex)
-        {
-            await WriteError(
-                context,
-                trace.TraceId,
-                HttpStatusCode.BadRequest,
-                "DOMAIN_RULE_VIOLATION",
-                ex.Message,
-                ex
-            );
-        }
-        catch (NotFoundException ex)
-        {
-            await WriteError(
-                context,
-                trace.TraceId,
-                HttpStatusCode.NotFound,
-                "RESOURCE_NOT_FOUND",
-                ex.Message,
-                ex
-            );
-        }
-        catch (InvalidRequestException ex)
-        {
-            await WriteError(
-                context,
-                trace.TraceId,
-                HttpStatusCode.BadRequest,
-                "INVALID_ARGUMENT",
-                ex.Message,
-                ex
-            );
-        }
-        catch (DbUpdateConcurrencyException ex)
-        {
-            await WriteError(
-                context,
-                trace.TraceId,
-                HttpStatusCode.Conflict,
-                "CONCURRENCY_CONFLICT",
-                "The resource was modified by another request.",
-                ex
-            );
-        }
-        catch (DbUpdateException ex)
-        {
-            await WriteError(
-                context,
-                trace.TraceId,
-                HttpStatusCode.ServiceUnavailable,
-                "INFRA_FAILURE",
-                "A persistence error occurred.",
-                ex
-            );
+            await next(context);
         }
         catch (Exception ex)
         {
-            await WriteError(
-                context,
-                trace.TraceId,
-                HttpStatusCode.InternalServerError,
-                "INTERNAL_ERROR",
-                "An unexpected error occurred.",
-                ex
-            );
+            await HandleException(context, ex);
         }
     }
 
-    private async Task WriteError(
-        HttpContext context,
-        string traceId,
-        HttpStatusCode status,
-        string code,
-        string message,
-        Exception ex
-    )
+    private static Task HandleException(HttpContext ctx, Exception ex)
     {
-        _logger.LogError(
-            ex,
-            "RequestFailed {@data}",
-            new
-            {
-                TraceId = traceId,
-                Path = context.Request.Path.Value,
-                Method = context.Request.Method,
-                StatusCode = (int)status,
-                Code = code,
-            }
-        );
+        var traceId =
+            ctx.Response.Headers.TryGetValue("x-trace-id", out var headerTraceId) && !string.IsNullOrWhiteSpace(headerTraceId)
+                ? headerTraceId.ToString()
+                : ctx.TraceIdentifier;
 
-        if (context.Response.HasStarted)
-            return;
+        (HttpStatusCode status, string errorCode, string message) = ex switch
+        {
+            InvalidRequestException e => (HttpStatusCode.BadRequest, "VALIDATION_ERROR", e.Message),
+            ConflictException e       => (HttpStatusCode.Conflict, e.ErrorCode, e.Message),
+            NotFoundException e       => (HttpStatusCode.NotFound, "NOT_FOUND", e.Message),
 
-        context.Response.StatusCode = (int)status;
+            _ => (HttpStatusCode.InternalServerError, "UNEXPECTED_ERROR", "Unexpected error occurred."),
+        };
 
-        var payload = new ApiErrorResponse(new ApiError(code, message, traceId));
-        await context.Response.WriteAsJsonAsync(payload);
+        var body = new ApiErrorResponse(errorCode, message, traceId);
+
+        ctx.Response.ContentType = "application/json; charset=utf-8";
+        ctx.Response.StatusCode = (int)status;
+
+        return ctx.Response.WriteAsync(JsonSerializer.Serialize(body, JsonOptions));
     }
 }

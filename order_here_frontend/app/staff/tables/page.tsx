@@ -9,36 +9,30 @@ import { CreateTableForm } from "@/components/CreateTableForm";
 export default function StaffTablesPage() {
   const [tables, setTables] = useState<TableDto[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
-  async function loadTables() {
-    try {
-      setLoading(true);
-      setError(null);
-
-      const data = await getTables();
-      setTables(data);
-    } catch {
-      setError("Failed to load tables");
-    } finally {
-      setLoading(false);
-    }
+  async function load() {
+    setLoading(true);
+    const data = await getTables();
+    setTables(data);
+    setLoading(false);
   }
 
   useEffect(() => {
-    loadTables();
+    load();
   }, []);
 
   return (
-    <div className="max-w-xl mx-auto p-6">
-      <h1 className="text-2xl font-bold mb-6">Staff – Table Management</h1>
+    <div className="max-w-xl mx-auto p-6 space-y-6">
+      <h1 className="text-2xl font-bold">Staff – Table Management</h1>
 
-      <CreateTableForm onCreated={loadTables} />
+      {/* 🔵 Create Form กลับมาแล้ว */}
+      <CreateTableForm onCreated={load} />
 
-      {loading && <div>Loading...</div>}
-      {error && <div className="text-red-500">{error}</div>}
-
-      {!loading && !error && <TableList tables={tables} />}
+      {loading ? (
+        <div>Loading...</div>
+      ) : (
+        <TableList tables={tables} refresh={load} />
+      )}
     </div>
   );
 }
