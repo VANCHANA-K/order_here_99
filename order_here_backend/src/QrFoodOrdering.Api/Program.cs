@@ -5,6 +5,7 @@ using QrFoodOrdering.Api.Middleware;
 // Application
 using QrFoodOrdering.Application;
 using QrFoodOrdering.Application.Common.Observability;
+using QrFoodOrdering.Application.Qr.Resolve;
 // Infrastructure
 using QrFoodOrdering.Infrastructure;
 
@@ -58,6 +59,7 @@ builder.Services.Configure<ApiBehaviorOptions>(options =>
 // DI: Application + Infrastructure
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.AddScoped<ResolveQrHandler>();
 
 // Observability
 builder.Services.AddScoped<ITraceContext, TraceContext>();

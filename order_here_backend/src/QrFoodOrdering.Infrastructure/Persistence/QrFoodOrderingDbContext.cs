@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using QrFoodOrdering.Domain.Orders;
+using QrFoodOrdering.Domain.Qr;
 using QrFoodOrdering.Domain.Tables;
 using QrFoodOrdering.Infrastructure.Persistence.Configurations;
 
@@ -13,11 +14,13 @@ public sealed class QrFoodOrderingDbContext : DbContext
     // Aggregate Root
     public DbSet<Order> Orders => Set<Order>();
     public DbSet<Table> Tables => Set<Table>();
+    public DbSet<QrCode> QrCodes => Set<QrCode>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         // Apply configuration for Table aggregate
         modelBuilder.ApplyConfiguration(new TableConfig());
+        modelBuilder.ApplyConfiguration(new QrCodeConfig());
 
         //
         // ============================
