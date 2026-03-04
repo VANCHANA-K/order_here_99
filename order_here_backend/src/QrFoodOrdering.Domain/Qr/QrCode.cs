@@ -21,6 +21,13 @@ public class QrCode
         IsActive = true;
     }
 
+    public static QrCode Create(Guid tableId)
+    {
+        var token = Guid.NewGuid().ToString("N");
+        var expiresAtUtc = DateTime.UtcNow.AddDays(1);
+        return new QrCode(tableId, token, expiresAtUtc);
+    }
+
     public bool IsExpired() => DateTime.UtcNow > ExpiresAtUtc;
 
     public void Deactivate() => IsActive = false;

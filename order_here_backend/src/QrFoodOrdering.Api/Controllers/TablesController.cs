@@ -1,12 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
 using QrFoodOrdering.Api.Contracts.Tables;
-using QrFoodOrdering.Application.Abstractions;
-using QrFoodOrdering.Application.Common.Exceptions;
-using QrFoodOrdering.Application.Tables;
+using QrFoodOrdering.Application.Qr.Generate;
 using QrFoodOrdering.Application.Tables.Create;
 using QrFoodOrdering.Application.Tables.GetAll;
 using QrFoodOrdering.Application.Tables.UpdateStatus;
-using QrFoodOrdering.Domain.Common;
 
 namespace QrFoodOrdering.Api.Controllers;
 
@@ -14,15 +11,6 @@ namespace QrFoodOrdering.Api.Controllers;
 [Route("api/v1/tables")]
 public sealed class TablesController : ControllerBase
 {
-    private readonly ITablesRepository _tables;
-    private readonly IUnitOfWork _uow;
-
-    public TablesController(ITablesRepository tables, IUnitOfWork uow)
-    {
-        _tables = tables;
-        _uow = uow;
-    }
-
     [HttpGet]
     public async Task<ActionResult<List<GetAllTablesResult>>> GetAll(
         [FromServices] GetAllTablesHandler handler,
@@ -70,33 +58,13 @@ public sealed class TablesController : ControllerBase
     // BE-35 Generate QR Code API
     // ===============================
     [HttpPost("{id:guid}/qr")]
-    public async Task<IActionResult> GenerateQr([FromRoute] Guid id, CancellationToken ct)
+    public async Task<IActionResult> GenerateQr(
+        [FromRoute] Guid id,
+        [FromServices] GenerateQrHandler handler,
+        CancellationToken ct
+    )
     {
-        var table = await _tables.GetByIdAsync(id, ct);
-
-        if (table is null)
-        {
-            throw new NotFoundException("Table was not found.");
-        }
-
-        try
-        {
-            table.EnsureActive();
-        }
-        catch (DomainException ex) when (ex.Message == "TABLE_INACTIVE")
-        {
-            throw new ConflictException("TABLE_INACTIVE", "This table is currently inactive.");
-        }
-
-        var qrUrl = $"https://localhost:3000/order/{table.Id}";
-
-        return Ok(
-            new
-            {
-                tableId = table.Id,
-                qrUrl,
-                generatedAtUtc = DateTime.UtcNow,
-            }
-        );
+        var result = await handler.HandleAsync(id, ct);
+        return Ok(result);
     }
 }

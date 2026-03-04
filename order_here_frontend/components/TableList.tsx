@@ -2,6 +2,7 @@
 
 import { TableDto } from "@/types/table";
 import { disableTable, enableTable } from "@/lib/api";
+import Link from "next/link";
 import { useState } from "react";
 
 interface Props {
@@ -50,21 +51,30 @@ export function TableList({ tables, refresh }: Props) {
             <div className="text-sm text-gray-500">Status: {table.status}</div>
           </div>
 
-          <button
-            onClick={() => toggle(table)}
-            disabled={loadingId === table.id}
-            className={`px-3 py-1 rounded text-white text-sm ${
-              table.status === "Active"
-                ? "bg-red-500 hover:bg-red-600"
-                : "bg-green-500 hover:bg-green-600"
-            }`}
-          >
-            {loadingId === table.id
-              ? "Processing..."
-              : table.status === "Active"
-              ? "Disable"
-              : "Enable"}
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => toggle(table)}
+              disabled={loadingId === table.id}
+              className={`px-3 py-1 rounded text-white text-sm ${
+                table.status === "Active"
+                  ? "bg-red-500 hover:bg-red-600"
+                  : "bg-green-500 hover:bg-green-600"
+              }`}
+            >
+              {loadingId === table.id
+                ? "Processing..."
+                : table.status === "Active"
+                ? "Disable"
+                : "Enable"}
+            </button>
+
+            <Link
+              href={`/staff/tables/${table.id}/qr`}
+              className="px-3 py-1 rounded border text-sm"
+            >
+              View QR
+            </Link>
+          </div>
         </div>
       ))}
     </div>

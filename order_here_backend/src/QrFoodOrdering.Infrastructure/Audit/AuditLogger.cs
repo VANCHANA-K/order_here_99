@@ -16,10 +16,10 @@ public sealed class AuditLogger : IAuditLogger
         _writer = writer;
     }
 
-    public Task LogAsync(string action, Guid subjectId, object data, CancellationToken ct)
+    public Task LogAsync(string eventType, string entityType, Guid entityId, object data, CancellationToken ct)
     {
-        var detail = JsonSerializer.Serialize(new { subjectId, data });
-        var log = new AuditLog(_trace.TraceId, action, detail);
+        var detail = JsonSerializer.Serialize(new { traceId = _trace.TraceId, entityId, data });
+        var log = new AuditLog(eventType, entityType, entityId, detail);
         return _writer.WriteAsync(log);
     }
 }

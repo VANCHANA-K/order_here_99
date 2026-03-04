@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using QrFoodOrdering.Domain.Audit;
 using QrFoodOrdering.Domain.Orders;
 using QrFoodOrdering.Domain.Qr;
 using QrFoodOrdering.Domain.Tables;
@@ -15,6 +16,7 @@ public sealed class QrFoodOrderingDbContext : DbContext
     public DbSet<Order> Orders => Set<Order>();
     public DbSet<Table> Tables => Set<Table>();
     public DbSet<QrCode> QrCodes => Set<QrCode>();
+    public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

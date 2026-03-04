@@ -30,6 +30,7 @@ public static class DependencyInjection
         services.AddSingleton<IIdempotencyStore, InMemoryIdempotencyStore>();
         services.AddSingleton<IAuditLogWriter, FileAuditLogWriter>();
         services.AddScoped<IAuditLogger, AuditLogger>();
+        services.AddScoped<IAuditService, AuditService>();
 
         return services;
     }

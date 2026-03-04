@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 using QrFoodOrdering.Domain.Audit;
 using QrFoodOrdering.Infrastructure.Audit;
@@ -22,9 +23,10 @@ public sealed class HealthController : ControllerBase
 
         await _audit.WriteAsync(
             new AuditLog(
-                traceId,
                 "HEALTH_CHECK",
-                "Health endpoint accessed"
+                "Health",
+                Guid.Empty,
+                JsonSerializer.Serialize(new { traceId, message = "Health endpoint accessed" })
             )
         );
 
@@ -35,4 +37,3 @@ public sealed class HealthController : ControllerBase
 
     }
 }
-

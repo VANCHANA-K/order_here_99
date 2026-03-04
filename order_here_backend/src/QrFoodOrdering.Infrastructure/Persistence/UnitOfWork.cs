@@ -27,5 +27,9 @@ public sealed class UnitOfWork : IUnitOfWork
             await _tx.CommitAsync(ct);
         }
     }
-}
 
+    public Task SaveChangesAsync(CancellationToken ct)
+    {
+        return _db.SaveChangesAsync(ct);
+    }
+}

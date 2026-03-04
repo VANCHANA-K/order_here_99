@@ -21,7 +21,7 @@ public sealed class CreateTableHandler
         await _repo.AddAsync(table, ct);
         await _repo.SaveChangesAsync(ct);
 
-        await _audit.LogAsync("TableCreated", table.Id, new { table.Code }, ct);
+        await _audit.LogAsync("TableCreated", "Table", table.Id, new { table.Code }, ct);
 
         return table.Id;
     }

@@ -31,6 +31,6 @@ public sealed class UpdateTableStatusHandler
 
         await _repo.SaveChangesAsync(ct);
 
-        await _audit.LogAsync("TableStatusChanged", table.Id, new { table.IsActive }, ct);
+        await _audit.LogAsync("TableStatusChanged", "Table", table.Id, new { table.IsActive }, ct);
     }
 }
