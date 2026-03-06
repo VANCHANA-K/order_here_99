@@ -39,6 +39,8 @@ public sealed class QrFoodOrderingDbContext : DbContext
 
         // Persist creation timestamp
         order.Property(o => o.CreatedAtUtc).IsRequired();
+        order.Property(o => o.TableId).IsRequired();
+        order.HasIndex(o => o.TableId);
 
         // Ignore computed / derived property
         // TotalAmount is calculated at runtime only

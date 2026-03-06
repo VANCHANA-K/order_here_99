@@ -67,8 +67,8 @@ public sealed class CreateOrderHandler
                 return new CreateOrderResult(existing.OrderId);
             }
 
-            // 3) Create aggregate (request currently empty placeholder)
-            var order = new Order(Guid.NewGuid());
+            // 3) Create aggregate
+            var order = new Order(Guid.NewGuid(), command.TableId);
 
             await _repository.AddAsync(order, ct);
 

@@ -23,4 +23,11 @@ public sealed class MenuRepository : IMenuRepository
             .OrderBy(x => x.Name)
             .ToListAsync(ct);
     }
+
+    public async Task<List<MenuItem>> GetByIdsAsync(List<Guid> ids, CancellationToken ct)
+    {
+        return await _db.MenuItems
+            .Where(x => ids.Contains(x.Id))
+            .ToListAsync(ct);
+    }
 }

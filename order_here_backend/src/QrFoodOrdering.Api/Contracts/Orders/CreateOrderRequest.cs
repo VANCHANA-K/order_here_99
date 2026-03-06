@@ -1,3 +1,5 @@
 namespace QrFoodOrdering.Api.Contracts.Orders;
 
-public sealed record CreateOrderRequest;
+public sealed record CreateOrderRequest(
+    Guid TableId
+);

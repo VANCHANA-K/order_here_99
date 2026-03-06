@@ -3,13 +3,14 @@ using QrFoodOrdering.Api.Contracts.Orders;
 using QrFoodOrdering.Application.Orders.AddItem;
 using QrFoodOrdering.Application.Orders.CloseOrder;
 using QrFoodOrdering.Application.Orders.CreateOrder;
+using QrFoodOrdering.Application.Orders.CreateOrderViaQr;
 using QrFoodOrdering.Application.Orders.GetOrder;
 using QrFoodOrdering.Application.Common.Exceptions;
 
 namespace QrFoodOrdering.Api.Controllers;
 
 [ApiController]
-[Route("orders")]
+[Route("api/v1/orders")]
 public sealed class OrdersController : ControllerBase
 {
     [HttpPost]
@@ -20,8 +21,13 @@ public sealed class OrdersController : ControllerBase
         CancellationToken ct
     )
     {
-        var appRequest = new QrFoodOrdering.Application.Orders.CreateOrder.CreateOrderRequest();
-        var result = await handler.Handle(new CreateOrderCommand(appRequest, idempotencyKey), ct);
+        if (request.TableId == Guid.Empty)
+            throw new InvalidRequestException("TABLE_ID_REQUIRED", "TableId is required.");
+
+        var result = await handler.Handle(
+            new CreateOrderCommand(request.TableId, idempotencyKey),
+            ct
+        );
 
         return CreatedAtAction(
             nameof(GetById),
@@ -52,6 +58,27 @@ public sealed class OrdersController : ControllerBase
         );
 
         return NoContent();
+    }
+
+    [HttpPost("qr")]
+    public async Task<ActionResult<CreateOrderViaQrResponse>> CreateViaQr(
+        [FromBody] CreateOrderViaQrRequest request,
+        [FromServices] CreateOrderViaQrHandler handler,
+        CancellationToken ct)
+    {
+        var cmd = new CreateOrderViaQrCommand(
+            request.TableId,
+            request.Items.Select(x => new CreateOrderViaQrItem(x.MenuItemId, x.Quantity)).ToList(),
+            request.IdempotencyKey
+        );
+
+        var result = await handler.Handle(cmd, ct);
+
+        return Ok(new CreateOrderViaQrResponse(
+            result.OrderId,
+            result.Status.ToString().ToUpperInvariant(),
+            result.CreatedAtUtc
+        ));
     }
 
     [HttpGet("{id:guid}")]

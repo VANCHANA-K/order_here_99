@@ -18,7 +18,7 @@ public sealed class CloseOrderHandler
             ?? throw new InvalidOperationException("Order not found");
 
         // Double submit safe: if already closed, treat as no-op
-        if (order.Status == OrderStatus.Closed)
+        if (order.Status == OrderStatus.Completed)
             return;
 
         order.Close(); // 🔥 rule อยู่ใน Domain

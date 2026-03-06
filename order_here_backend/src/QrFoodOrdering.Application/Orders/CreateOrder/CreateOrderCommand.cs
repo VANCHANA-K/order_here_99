@@ -1,6 +1,6 @@
 namespace QrFoodOrdering.Application.Orders.CreateOrder;
 
 public sealed record CreateOrderCommand(
-    CreateOrderRequest Request,
+    Guid TableId,
     string? IdempotencyKey
 );

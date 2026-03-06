@@ -1,4 +1,5 @@
 namespace QrFoodOrdering.Application.Orders.CreateOrder;
 
-public sealed record CreateOrderRequest;
-
+public sealed record CreateOrderRequest(
+    Guid TableId
+);

@@ -38,34 +38,34 @@ public class CloseOrderHandlerTests
     }
 
     [Fact]
-    public async Task Close_order_when_open_should_set_closed_and_persist()
+    public async Task Close_order_when_open_should_set_completed_and_persist()
     {
         var repo = new InMemoryOrderRepository();
         var handler = new CloseOrderHandler(repo);
 
-        var order = new Order(Guid.NewGuid());
+        var order = new Order(Guid.NewGuid(), Guid.NewGuid());
         await repo.AddAsync(order, CancellationToken.None);
 
         await handler.Handle(order.Id, CancellationToken.None);
 
-        Assert.Equal(OrderStatus.Closed, repo.Store[order.Id].Status);
+        Assert.Equal(OrderStatus.Completed, repo.Store[order.Id].Status);
         Assert.Equal(1, repo.UpdateCalls);
     }
 
     [Fact]
-    public async Task Close_order_when_already_closed_should_be_noop_and_not_persist()
+    public async Task Close_order_when_already_completed_should_be_noop_and_not_persist()
     {
         var repo = new InMemoryOrderRepository();
         var handler = new CloseOrderHandler(repo);
 
-        var order = new Order(Guid.NewGuid());
+        var order = new Order(Guid.NewGuid(), Guid.NewGuid());
         order.Close();
         await repo.AddAsync(order, CancellationToken.None);
 
         await handler.Handle(order.Id, CancellationToken.None);
 
-        // still closed and no extra update
-        Assert.Equal(OrderStatus.Closed, repo.Store[order.Id].Status);
+        // still completed and no extra update
+        Assert.Equal(OrderStatus.Completed, repo.Store[order.Id].Status);
         Assert.Equal(0, repo.UpdateCalls);
     }
 
@@ -79,4 +79,3 @@ public class CloseOrderHandlerTests
             handler.Handle(Guid.NewGuid(), CancellationToken.None));
     }
 }
-

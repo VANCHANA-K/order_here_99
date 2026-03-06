@@ -7,6 +7,7 @@ public class Order
     private readonly List<OrderItem> _items = new();
 
     public Guid Id { get; }
+    public Guid TableId { get; private set; }
     public OrderStatus Status { get; private set; }
     public DateTime CreatedAtUtc { get; private set; }
     public IReadOnlyCollection<OrderItem> Items => _items.AsReadOnly();
@@ -31,13 +32,22 @@ public class Order
         _items = new List<OrderItem>();
     }
 
-    public Order(Guid id, DateTime? createdAtUtc = null)
+    public Order(Guid id, Guid tableId, DateTime? createdAtUtc = null)
+        : this(id, tableId, OrderStatus.Pending, createdAtUtc)
+    {
+    }
+
+    public Order(Guid id, Guid tableId, OrderStatus status, DateTime? createdAtUtc = null)
     {
         if (id == Guid.Empty)
             throw new DomainException("Order id is required");
 
+        if (tableId == Guid.Empty)
+            throw new DomainException("Table id is required");
+
         Id = id;
-        Status = OrderStatus.Created;
+        TableId = tableId;
+        Status = status;
         CreatedAtUtc = createdAtUtc ?? DateTime.UtcNow;
     }
 
@@ -50,17 +60,13 @@ public class Order
     public void Close()
     {
         EnsureOrderIsOpen();
-        Status = OrderStatus.Closed;
+        Status = OrderStatus.Completed;
     }
 
     public void Cancel()
     {
-        // R2: Cancel หลัง Paid ไม่ได้
-        if (Status == OrderStatus.Paid)
-            throw new DomainException("Cannot cancel a paid order");
-
-        if (Status == OrderStatus.Closed)
-            throw new DomainException("Cannot cancel a closed order");
+        if (Status == OrderStatus.Completed)
+            throw new DomainException("Cannot cancel a completed order");
 
         Status = OrderStatus.Cancelled;
     }
@@ -69,12 +75,12 @@ public class Order
     public void MarkPaid()
     {
         EnsureOrderIsOpen();
-        Status = OrderStatus.Paid;
+        Status = OrderStatus.Confirmed;
     }
 
     private void EnsureOrderIsOpen()
     {
-        if (Status == OrderStatus.Closed || Status == OrderStatus.Cancelled)
+        if (Status == OrderStatus.Completed || Status == OrderStatus.Cancelled)
             throw new DomainException("Order is not open");
     }
 }

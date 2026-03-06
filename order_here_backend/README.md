@@ -54,10 +54,21 @@ cd order_here/order_here_backend
 
 # 🟢 Run Backend
 
+# 🧪 Run Tests
+
+From `order_here_backend`:
+
+
+
 Restore:
 
 ```bash
 dotnet restore QrFoodOrdering.sln
+```
+
+```bash
+
+dotnet test QrFoodOrdering.sln
 ```
 
 Build:

@@ -1,6 +1,7 @@
 import type { TableDto } from "@/types/table";
 import type { ApiErrorResponse, QrResolveResponse } from "@/types/qr";
 import type { MenuItemDto } from "@/types/menu";
+import type { CreateOrderViaQrRequest, CreateOrderViaQrResponse } from "@/types/order";
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_PATH?.replace(/\/$/, "") ?? "";
 
@@ -117,4 +118,30 @@ export async function getMenuByTable(tableId: string): Promise<MenuItemDto[]> {
   }
 
   return data as MenuItemDto[];
+}
+
+export async function createOrderViaQr(
+  payload: CreateOrderViaQrRequest
+): Promise<CreateOrderViaQrResponse> {
+  const res = await fetch(`${BASE_URL}/api/v1/orders/qr`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  const data = await res.json().catch(() => null);
+
+  if (!res.ok) {
+    if (data) {
+      throw data as ApiErrorResponse;
+    }
+
+    throw {
+      errorCode: "REQUEST_FAILED",
+      message: `Failed to create order (${res.status})`,
+      traceId: "",
+    } as ApiErrorResponse;
+  }
+
+  return data as CreateOrderViaQrResponse;
 }

@@ -7,17 +7,17 @@ namespace QrFoodOrdering.Domain.Tests.Orders;
 public class OrderTests
 {
     [Fact]
-    public void Create_order_should_start_as_created()
+    public void Create_order_should_start_as_pending()
     {
-        var order = new Order(Guid.NewGuid());
-        Assert.Equal(OrderStatus.Created, order.Status);
+        var order = new Order(Guid.NewGuid(), Guid.NewGuid());
+        Assert.Equal(OrderStatus.Pending, order.Status);
         Assert.Empty(order.Items);
     }
 
     [Fact]
     public void AddItem_after_close_should_throw()
     {
-        var order = new Order(Guid.NewGuid());
+        var order = new Order(Guid.NewGuid(), Guid.NewGuid());
         order.Close();
 
         var item = new OrderItem(Guid.NewGuid(), "Fried Rice", 1, new Money(50));
@@ -29,7 +29,7 @@ public class OrderTests
     [Fact]
     public void AddItem_after_cancel_should_throw()
     {
-        var order = new Order(Guid.NewGuid());
+        var order = new Order(Guid.NewGuid(), Guid.NewGuid());
         order.Cancel();
 
         var item = new OrderItem(Guid.NewGuid(), "Pad Thai", 1, new Money(60));
@@ -38,19 +38,19 @@ public class OrderTests
     }
 
     [Fact]
-    public void Cancel_after_paid_should_throw()
+    public void Cancel_after_completed_should_throw()
     {
-        var order = new Order(Guid.NewGuid());
-        order.MarkPaid();
+        var order = new Order(Guid.NewGuid(), Guid.NewGuid());
+        order.Close();
 
         var ex = Assert.Throws<DomainException>(() => order.Cancel());
-        Assert.Contains("paid", ex.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("completed", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
     public void TotalAmount_should_sum_items_correctly()
     {
-        var order = new Order(Guid.NewGuid());
+        var order = new Order(Guid.NewGuid(), Guid.NewGuid());
         order.AddItem(new OrderItem(Guid.NewGuid(), "Coffee", 2, new Money(40))); // 80
         order.AddItem(new OrderItem(Guid.NewGuid(), "Cake", 1, new Money(90)));   // 90
 
