@@ -7,6 +7,25 @@ import { resolveQr } from "@/lib/api";
 import type { ApiErrorResponse } from "@/types/qr";
 import { saveTableSession } from "@/lib/session";
 
+function toApiError(err: unknown): ApiErrorResponse {
+  if (
+    typeof err === "object" &&
+    err !== null &&
+    "errorCode" in err &&
+    "message" in err &&
+    typeof (err as { errorCode: unknown }).errorCode === "string" &&
+    typeof (err as { message: unknown }).message === "string"
+  ) {
+    return err as ApiErrorResponse;
+  }
+
+  if (err instanceof Error) {
+    return { errorCode: "REQUEST_FAILED", message: err.message, traceId: "" };
+  }
+
+  return { errorCode: "REQUEST_FAILED", message: "Failed to resolve QR token.", traceId: "" };
+}
+
 export default function OrderEntryPage() {
   const router = useRouter();
   const params = useParams();
@@ -24,9 +43,9 @@ export default function OrderEntryPage() {
           tableCode: result.tableCode,
           createdAt: Date.now(),
         });
-        router.push("/menu");
-      } catch (err) {
-        setError(err as ApiErrorResponse);
+        router.replace("/menu");
+      } catch (err: unknown) {
+        setError(toApiError(err));
       } finally {
         setLoading(false);
       }
