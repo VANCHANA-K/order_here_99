@@ -31,7 +31,9 @@ public sealed class CreateOrderHandler
 
     public async Task<CreateOrderResult> Handle(CreateOrderCommand command, CancellationToken ct)
     {
-        var key = command.IdempotencyKey ?? string.Empty;
+        var key = string.IsNullOrWhiteSpace(command.IdempotencyKey)
+            ? string.Empty
+            : $"orders:create:{command.IdempotencyKey}";
 
         _logger.LogInformation(
             "CreateOrderStarted {@data}",
@@ -71,6 +73,7 @@ public sealed class CreateOrderHandler
             var order = new Order(Guid.NewGuid(), command.TableId);
 
             await _repository.AddAsync(order, ct);
+            await _uow.SaveChangesAsync(ct);
 
             // 4) Mark idempotency after successful save
             await _idempotency.MarkAsync(key, order.Id, ct);

@@ -31,7 +31,11 @@ public sealed class ExceptionHandlingMiddleware : IMiddleware
 
         (HttpStatusCode status, string errorCode, string message) = ex switch
         {
-            InvalidRequestException e => (MapInvalidRequestStatus(e.ErrorCode), e.ErrorCode, e.Message),
+            InvalidRequestException e => (
+                MapInvalidRequestStatus(e.ErrorCode),
+                e.ErrorCode,
+                e.Message
+            ),
             ConflictException e => (HttpStatusCode.Conflict, e.ErrorCode, e.Message),
             NotFoundException e => (HttpStatusCode.NotFound, "NOT_FOUND", e.Message),
 
