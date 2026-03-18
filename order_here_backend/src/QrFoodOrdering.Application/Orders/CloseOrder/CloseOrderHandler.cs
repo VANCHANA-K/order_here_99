@@ -1,4 +1,5 @@
 using QrFoodOrdering.Application.Abstractions;
+using QrFoodOrdering.Application.Common.Exceptions;
 using QrFoodOrdering.Domain.Orders;
 
 namespace QrFoodOrdering.Application.Orders.CloseOrder;
@@ -6,16 +7,18 @@ namespace QrFoodOrdering.Application.Orders.CloseOrder;
 public sealed class CloseOrderHandler
 {
     private readonly IOrderRepository _repository;
+    private readonly IUnitOfWork _uow;
 
-    public CloseOrderHandler(IOrderRepository repository)
+    public CloseOrderHandler(IOrderRepository repository, IUnitOfWork uow)
     {
         _repository = repository;
+        _uow = uow;
     }
 
     public async Task Handle(Guid orderId, CancellationToken ct)
     {
         var order = await _repository.GetByIdAsync(orderId, ct)
-            ?? throw new InvalidOperationException("Order not found");
+            ?? throw new NotFoundException("Order not found");
 
         // Double submit safe: if already closed, treat as no-op
         if (order.Status == OrderStatus.Completed)
@@ -24,5 +27,6 @@ public sealed class CloseOrderHandler
         order.Close(); // 🔥 rule อยู่ใน Domain
 
         await _repository.UpdateAsync(order, ct);
+        await _uow.SaveChangesAsync(ct);
     }
 }

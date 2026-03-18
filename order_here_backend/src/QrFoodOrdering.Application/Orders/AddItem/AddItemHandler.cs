@@ -13,6 +13,7 @@ public sealed class AddItemHandler
     private readonly IOrderRepository _repo;
     private readonly IIdempotencyStore _idempotency;
     private readonly IRetryPolicy _retry;
+    private readonly IUnitOfWork _uow;
     private readonly ITraceContext _trace;
     private readonly ILogger<AddItemHandler> _logger;
 
@@ -20,6 +21,7 @@ public sealed class AddItemHandler
         IOrderRepository repo,
         IIdempotencyStore idempotency,
         IRetryPolicy retry,
+        IUnitOfWork uow,
         ITraceContext trace,
         ILogger<AddItemHandler> logger
     )
@@ -27,6 +29,7 @@ public sealed class AddItemHandler
         _repo = repo;
         _idempotency = idempotency;
         _retry = retry;
+        _uow = uow;
         _trace = trace;
         _logger = logger;
     }
@@ -154,5 +157,6 @@ public sealed class AddItemHandler
         order.AddItem(item);
 
         await _repo.UpdateAsync(order, ct);
+        await _uow.SaveChangesAsync(ct);
     }
 }

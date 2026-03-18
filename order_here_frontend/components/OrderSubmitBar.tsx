@@ -30,14 +30,14 @@ function toApiError(err: unknown): ApiErrorResponse {
 
   if (err instanceof Error) {
     return {
-      errorCode: "REQUEST_FAILED",
+      errorCode: "UNEXPECTED_ERROR",
       message: err.message,
       traceId: "",
     };
   }
 
   return {
-    errorCode: "REQUEST_FAILED",
+    errorCode: "UNEXPECTED_ERROR",
     message: "Failed to place order.",
     traceId: "",
   };
@@ -62,7 +62,7 @@ export default function OrderSubmitBar({ items, onSuccess }: Props) {
 
     if (!session) {
       setError({
-        errorCode: "NO_SESSION",
+        errorCode: "UNEXPECTED_ERROR",
         message: "No table session found.",
         traceId: "",
       });

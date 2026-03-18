@@ -14,7 +14,8 @@ public sealed class ResolveQrHandler
     public ResolveQrHandler(
         IQrRepository qrRepository,
         ITablesRepository tablesRepository,
-        IAuditService auditService)
+        IAuditService auditService
+    )
     {
         _qrRepository = qrRepository;
         _tablesRepository = tablesRepository;
@@ -29,27 +30,23 @@ public sealed class ResolveQrHandler
         var qr = await _qrRepository.GetByTokenAsync(token, ct);
 
         if (qr is null)
-            throw new InvalidRequestException("QR_NOT_FOUND", "QR token not found.");
+            throw new InvalidRequestException("QR_NOT_FOUND", "QR code was not found.");
 
         if (!qr.IsActive)
             throw new ConflictException("QR_INACTIVE", "This QR code is inactive.");
 
         if (qr.IsExpired())
-            throw new ConflictException("QR_EXPIRED", "QR code has expired.");
+            throw new ConflictException("QR_EXPIRED", "This QR code has expired.");
 
         var table = await _tablesRepository.GetByIdAsync(qr.TableId, ct);
 
         if (table is null)
-            throw new InvalidRequestException("TABLE_NOT_FOUND", "Table not found.");
+            throw new InvalidRequestException("TABLE_NOT_FOUND", "Table was not found.");
 
         if (!table.IsActive)
-            throw new ConflictException("TABLE_INACTIVE", "This table is currently inactive.");
+            throw new ConflictException("TABLE_INACTIVE", "This table is currently unavailable.");
 
-        await _auditService.LogAsync(
-            "QR_RESOLVED",
-            "QrCode",
-            qr.Id,
-            qr.Token);
+        await _auditService.LogAsync("QR_RESOLVED", "QrCode", qr.Id, qr.Token);
 
         return new ResolveQrResult { TableId = table.Id, TableCode = table.Code };
     }

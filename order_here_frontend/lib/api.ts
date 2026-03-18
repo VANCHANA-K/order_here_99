@@ -137,7 +137,7 @@ export async function createOrderViaQr(
     }
 
     throw {
-      errorCode: "REQUEST_FAILED",
+      errorCode: "UNEXPECTED_ERROR",
       message: `Failed to create order (${res.status})`,
       traceId: "",
     } as ApiErrorResponse;

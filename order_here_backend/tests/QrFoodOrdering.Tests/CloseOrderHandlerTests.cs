@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using QrFoodOrdering.Application.Abstractions;
+using QrFoodOrdering.Application.Common.Exceptions;
 using QrFoodOrdering.Application.Orders.CloseOrder;
 using QrFoodOrdering.Domain.Orders;
 using Xunit;
@@ -37,11 +38,33 @@ public class CloseOrderHandlerTests
         }
     }
 
+    private sealed class FakeUnitOfWork : IUnitOfWork
+    {
+        public int SaveChangesCalls { get; private set; }
+
+        public Task<IAsyncDisposable> BeginTransactionAsync(CancellationToken ct) =>
+            Task.FromResult<IAsyncDisposable>(new NoopAsyncDisposable());
+
+        public Task CommitAsync(CancellationToken ct) => Task.CompletedTask;
+
+        public Task SaveChangesAsync(CancellationToken ct)
+        {
+            SaveChangesCalls++;
+            return Task.CompletedTask;
+        }
+    }
+
+    private sealed class NoopAsyncDisposable : IAsyncDisposable
+    {
+        public ValueTask DisposeAsync() => ValueTask.CompletedTask;
+    }
+
     [Fact]
     public async Task Close_order_when_open_should_set_completed_and_persist()
     {
         var repo = new InMemoryOrderRepository();
-        var handler = new CloseOrderHandler(repo);
+        var uow = new FakeUnitOfWork();
+        var handler = new CloseOrderHandler(repo, uow);
 
         var order = new Order(Guid.NewGuid(), Guid.NewGuid());
         await repo.AddAsync(order, CancellationToken.None);
@@ -50,13 +73,15 @@ public class CloseOrderHandlerTests
 
         Assert.Equal(OrderStatus.Completed, repo.Store[order.Id].Status);
         Assert.Equal(1, repo.UpdateCalls);
+        Assert.Equal(1, uow.SaveChangesCalls);
     }
 
     [Fact]
     public async Task Close_order_when_already_completed_should_be_noop_and_not_persist()
     {
         var repo = new InMemoryOrderRepository();
-        var handler = new CloseOrderHandler(repo);
+        var uow = new FakeUnitOfWork();
+        var handler = new CloseOrderHandler(repo, uow);
 
         var order = new Order(Guid.NewGuid(), Guid.NewGuid());
         order.Close();
@@ -67,15 +92,17 @@ public class CloseOrderHandlerTests
         // still completed and no extra update
         Assert.Equal(OrderStatus.Completed, repo.Store[order.Id].Status);
         Assert.Equal(0, repo.UpdateCalls);
+        Assert.Equal(0, uow.SaveChangesCalls);
     }
 
     [Fact]
-    public async Task Close_order_not_found_should_throw()
+    public async Task Close_order_not_found_should_throw_not_found()
     {
         var repo = new InMemoryOrderRepository();
-        var handler = new CloseOrderHandler(repo);
+        var uow = new FakeUnitOfWork();
+        var handler = new CloseOrderHandler(repo, uow);
 
-        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+        await Assert.ThrowsAsync<NotFoundException>(() =>
             handler.Handle(Guid.NewGuid(), CancellationToken.None));
     }
 }
