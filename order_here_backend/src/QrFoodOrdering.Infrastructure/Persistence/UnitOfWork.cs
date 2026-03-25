@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using QrFoodOrdering.Application.Abstractions;
 using QrFoodOrdering.Infrastructure.Persistence;
@@ -28,8 +29,15 @@ public sealed class UnitOfWork : IUnitOfWork
         }
     }
 
-    public Task SaveChangesAsync(CancellationToken ct)
+    public async Task SaveChangesAsync(CancellationToken ct)
     {
-        return _db.SaveChangesAsync(ct);
+        try
+        {
+            await _db.SaveChangesAsync(ct);
+        }
+        catch (DbUpdateException ex)
+        {
+            throw DbUpdateExceptionTranslator.Translate(ex);
+        }
     }
 }

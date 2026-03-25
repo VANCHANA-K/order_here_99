@@ -1,39 +1,18 @@
-using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
-using QrFoodOrdering.Domain.Audit;
-using QrFoodOrdering.Infrastructure.Audit;
+using QrFoodOrdering.Api.Contracts.Common;
 
 namespace QrFoodOrdering.Api.Controllers;
 
 [ApiController]
 [Route("health")]
+[Produces("application/json")]
 public sealed class HealthController : ControllerBase
 {
-    private readonly IAuditLogWriter _audit;
-
-    public HealthController(IAuditLogWriter audit)
-    {
-        _audit = audit;
-    }
-
     [HttpGet]
-    public async Task<IActionResult> Get()
+    [ProducesResponseType(typeof(HealthResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status500InternalServerError)]
+    public ActionResult<HealthResponse> Get()
     {
-        var traceId = HttpContext.TraceIdentifier;
-
-        await _audit.WriteAsync(
-            new AuditLog(
-                "HEALTH_CHECK",
-                "Health",
-                Guid.Empty,
-                JsonSerializer.Serialize(new { traceId, message = "Health endpoint accessed" })
-            )
-        );
-
-        return Ok(new
-        {
-            status = "ok"
-        });
-
+        return Ok(new HealthResponse("ok"));
     }
 }

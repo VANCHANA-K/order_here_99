@@ -1,4 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
+using QrFoodOrdering.Api.Contracts.Common;
+using QrFoodOrdering.Api.Contracts.Qr;
 using QrFoodOrdering.Api.Contracts.Tables;
 using QrFoodOrdering.Application.Qr.Generate;
 using QrFoodOrdering.Application.Tables.Create;
@@ -9,48 +11,72 @@ namespace QrFoodOrdering.Api.Controllers;
 
 [ApiController]
 [Route("api/v1/tables")]
+[Produces("application/json")]
 public sealed class TablesController : ControllerBase
 {
-    [HttpGet]
-    public async Task<ActionResult<List<GetAllTablesResult>>> GetAll(
-        [FromServices] GetAllTablesHandler handler,
-        CancellationToken ct
+    private readonly GetAllTablesHandler _getAllTablesHandler;
+    private readonly CreateTableHandler _createTableHandler;
+    private readonly UpdateTableStatusHandler _updateTableStatusHandler;
+    private readonly GenerateQrHandler _generateQrHandler;
+
+    public TablesController(
+        GetAllTablesHandler getAllTablesHandler,
+        CreateTableHandler createTableHandler,
+        UpdateTableStatusHandler updateTableStatusHandler,
+        GenerateQrHandler generateQrHandler
     )
     {
-        var result = await handler.Handle(ct);
-        return Ok(result);
+        _getAllTablesHandler = getAllTablesHandler;
+        _createTableHandler = createTableHandler;
+        _updateTableStatusHandler = updateTableStatusHandler;
+        _generateQrHandler = generateQrHandler;
+    }
+
+    [HttpGet]
+    [ProducesResponseType(typeof(List<TableResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult<List<TableResponse>>> GetAll(CancellationToken ct)
+    {
+        var result = await _getAllTablesHandler.Handle(ct);
+        var response = result
+            .Select(x => new TableResponse(x.Id, x.Code, x.Status))
+            .ToList();
+        return Ok(response);
     }
 
     [HttpPost]
-    public async Task<IActionResult> Create(
+    [ProducesResponseType(typeof(CreatedIdResponse), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult<CreatedIdResponse>> Create(
         [FromBody] CreateTableRequest request,
-        [FromServices] CreateTableHandler handler,
         CancellationToken ct
     )
     {
-        var id = await handler.Handle(new CreateTableCommand(request.Code), ct);
-        return Created($"/api/v1/tables/{id}", new { id });
+        var id = await _createTableHandler.Handle(new CreateTableCommand(request.Code), ct);
+        return Created($"/api/v1/tables/{id}", new CreatedIdResponse(id));
     }
 
     [HttpPost("{id:guid}/activate")]
-    public async Task<IActionResult> Activate(
-        Guid id,
-        [FromServices] UpdateTableStatusHandler handler,
-        CancellationToken ct
-    )
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> Activate(Guid id, CancellationToken ct)
     {
-        await handler.Handle(new UpdateTableStatusCommand(id, true), ct);
+        await _updateTableStatusHandler.Handle(new UpdateTableStatusCommand(id, true), ct);
         return NoContent();
     }
 
     [HttpPatch("{id:guid}/disable")]
-    public async Task<IActionResult> Disable(
-        Guid id,
-        [FromServices] UpdateTableStatusHandler handler,
-        CancellationToken ct
-    )
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> Disable(Guid id, CancellationToken ct)
     {
-        await handler.Handle(new UpdateTableStatusCommand(id, false), ct);
+        await _updateTableStatusHandler.Handle(new UpdateTableStatusCommand(id, false), ct);
         return NoContent();
     }
 
@@ -58,13 +84,18 @@ public sealed class TablesController : ControllerBase
     // BE-35 Generate QR Code API
     // ===============================
     [HttpPost("{id:guid}/qr")]
-    public async Task<IActionResult> GenerateQr(
-        [FromRoute] Guid id,
-        [FromServices] GenerateQrHandler handler,
-        CancellationToken ct
-    )
+    [ProducesResponseType(typeof(GenerateQrResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult<GenerateQrResponse>> GenerateQr([FromRoute] Guid id, CancellationToken ct)
     {
-        var result = await handler.HandleAsync(id, ct);
-        return Ok(result);
+        var result = await _generateQrHandler.HandleAsync(id, ct);
+        return Ok(new GenerateQrResponse(
+            result.TableId,
+            result.Token,
+            result.QrUrl,
+            result.GeneratedAtUtc
+        ));
     }
 }

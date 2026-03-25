@@ -1,7 +1,10 @@
 using Microsoft.Extensions.Logging;
 using QrFoodOrdering.Application.Abstractions;
+using QrFoodOrdering.Application.Common.Errors;
+using QrFoodOrdering.Application.Common.Exceptions;
 using QrFoodOrdering.Application.Common.Idempotency;
 using QrFoodOrdering.Application.Common.Observability;
+using QrFoodOrdering.Application.Tables;
 using QrFoodOrdering.Domain.Orders;
 
 namespace QrFoodOrdering.Application.Orders.CreateOrder;
@@ -9,6 +12,7 @@ namespace QrFoodOrdering.Application.Orders.CreateOrder;
 public sealed class CreateOrderHandler
 {
     private readonly IOrderRepository _repository;
+    private readonly ITablesRepository _tablesRepository;
     private readonly IIdempotencyStore _idempotency;
     private readonly IUnitOfWork _uow;
     private readonly ILogger<CreateOrderHandler> _logger;
@@ -16,6 +20,7 @@ public sealed class CreateOrderHandler
 
     public CreateOrderHandler(
         IOrderRepository repository,
+        ITablesRepository tablesRepository,
         IIdempotencyStore idempotency,
         IUnitOfWork uow,
         ILogger<CreateOrderHandler> logger,
@@ -23,6 +28,7 @@ public sealed class CreateOrderHandler
     )
     {
         _repository = repository;
+        _tablesRepository = tablesRepository;
         _idempotency = idempotency;
         _uow = uow;
         _logger = logger;
@@ -37,7 +43,7 @@ public sealed class CreateOrderHandler
 
         _logger.LogInformation(
             "CreateOrderStarted {@data}",
-            new { TraceId = _trace.TraceId, Action = "CREATE_ORDER" }
+            new { TraceId = _trace.TraceId, Action = LogActions.CreateOrder }
         );
 
         try
@@ -51,9 +57,9 @@ public sealed class CreateOrderHandler
                     new
                     {
                         TraceId = _trace.TraceId,
-                        Action = "CREATE_ORDER",
+                        Action = LogActions.CreateOrder,
                         OrderId = existing.OrderId,
-                        Status = "HIT",
+                        Status = LogStatuses.Hit,
                     }
                 );
                 return new CreateOrderResult(existing.OrderId);
@@ -68,6 +74,19 @@ public sealed class CreateOrderHandler
                 await _uow.CommitAsync(ct);
                 return new CreateOrderResult(existing.OrderId);
             }
+
+            var table =
+                await _tablesRepository.GetByIdAsync(command.TableId, ct)
+                ?? throw new NotFoundException(
+                    ApplicationErrorCodes.TableNotFound,
+                    "Table not found."
+                );
+
+            if (!table.IsActive)
+                throw new ConflictException(
+                    ApplicationErrorCodes.TableInactive,
+                    "Table is inactive."
+                );
 
             // 3) Create aggregate
             var order = new Order(Guid.NewGuid(), command.TableId);
@@ -85,9 +104,9 @@ public sealed class CreateOrderHandler
                 new
                 {
                     TraceId = _trace.TraceId,
-                    Action = "CREATE_ORDER",
+                    Action = LogActions.CreateOrder,
                     OrderId = order.Id,
-                    Status = "SUCCESS",
+                    Status = LogStatuses.Success,
                 }
             );
 
@@ -100,8 +119,8 @@ public sealed class CreateOrderHandler
                 new
                 {
                     TraceId = _trace.TraceId,
-                    Action = "CREATE_ORDER",
-                    Status = "FAILED",
+                    Action = LogActions.CreateOrder,
+                    Status = LogStatuses.Failed,
                 }
             );
             throw;

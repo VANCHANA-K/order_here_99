@@ -2,9 +2,9 @@ using QrFoodOrdering.Domain.Common;
 using QrFoodOrdering.Domain.Orders;
 using Xunit;
 
-namespace QrFoodOrdering.Domain.Tests.Orders;
+namespace QrFoodOrdering.UnitTests.Domain;
 
-public class OrderTests
+public class OrderDomainUnitTests
 {
     [Fact]
     public void Create_order_should_start_as_pending()
@@ -23,6 +23,7 @@ public class OrderTests
         var item = new OrderItem(Guid.NewGuid(), "Fried Rice", 1, new Money(50));
 
         var ex = Assert.Throws<DomainException>(() => order.AddItem(item));
+        Assert.Equal(DomainErrorCodes.OrderNotOpen, ex.ErrorCode);
         Assert.Contains("not open", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
 
@@ -34,7 +35,8 @@ public class OrderTests
 
         var item = new OrderItem(Guid.NewGuid(), "Pad Thai", 1, new Money(60));
 
-        Assert.Throws<DomainException>(() => order.AddItem(item));
+        var ex = Assert.Throws<DomainException>(() => order.AddItem(item));
+        Assert.Equal(DomainErrorCodes.OrderNotOpen, ex.ErrorCode);
     }
 
     [Fact]
@@ -44,6 +46,7 @@ public class OrderTests
         order.Close();
 
         var ex = Assert.Throws<DomainException>(() => order.Cancel());
+        Assert.Equal(DomainErrorCodes.OrderAlreadyCompleted, ex.ErrorCode);
         Assert.Contains("completed", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
 

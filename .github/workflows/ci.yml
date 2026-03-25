@@ -21,8 +21,14 @@ jobs:
       - name: Restore
         run: dotnet restore order_here_backend/QrFoodOrdering.sln
 
+      - name: Format
+        run: dotnet format order_here_backend/QrFoodOrdering.sln --verify-no-changes
+
       - name: Build
         run: dotnet build order_here_backend/QrFoodOrdering.sln --no-restore --configuration Release
 
-      - name: Test
-        run: dotnet test order_here_backend/QrFoodOrdering.sln --no-build --configuration Release
+      - name: Test UnitTests
+        run: dotnet test order_here_backend/tests/QrFoodOrdering.UnitTests/QrFoodOrdering.UnitTests.csproj --no-build --configuration Release
+
+      - name: Test IntegrationTests
+        run: dotnet test order_here_backend/tests/QrFoodOrdering.IntegrationTests/QrFoodOrdering.IntegrationTests.csproj --no-build --configuration Release

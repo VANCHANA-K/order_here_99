@@ -1,9 +1,9 @@
 using QrFoodOrdering.Domain.Orders;
 using Xunit;
 
-namespace QrFoodOrdering.Tests;
+namespace QrFoodOrdering.UnitTests;
 
-public class OrderTests
+public class OrderUnitTests
 {
     [Fact]
     public void Create_order_should_start_as_pending()

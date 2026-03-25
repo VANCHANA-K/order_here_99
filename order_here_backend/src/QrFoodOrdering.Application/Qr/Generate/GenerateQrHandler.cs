@@ -1,5 +1,6 @@
 using QrFoodOrdering.Application.Abstractions;
 using QrFoodOrdering.Application.Common.Audit;
+using QrFoodOrdering.Application.Common.Errors;
 using QrFoodOrdering.Application.Common.Exceptions;
 using QrFoodOrdering.Application.Tables;
 using QrFoodOrdering.Domain.Qr;
@@ -31,10 +32,16 @@ public sealed class GenerateQrHandler
         var table = await _tablesRepository.GetByIdAsync(tableId, ct);
 
         if (table is null)
-            throw new InvalidRequestException("TABLE_NOT_FOUND", "Table not found.");
+            throw new InvalidRequestException(
+                ApplicationErrorCodes.TableNotFound,
+                "Table not found."
+            );
 
         if (!table.IsActive)
-            throw new ConflictException("TABLE_INACTIVE", "Cannot generate QR for inactive table.");
+            throw new ConflictException(
+                ApplicationErrorCodes.TableInactive,
+                "Cannot generate QR for inactive table."
+            );
 
         // BE-37 Logic
         var activeQrs = await _qrRepository.GetActiveByTableIdAsync(tableId, ct);
@@ -49,13 +56,13 @@ public sealed class GenerateQrHandler
 
         await _qrRepository.AddAsync(newQr, ct);
 
-        await _unitOfWork.SaveChangesAsync(ct);
-
         await _auditService.LogAsync(
-            "QR_GENERATED",
-            "Table",
+            AuditEvents.QrGenerated,
+            AuditEntities.Table,
             table.Id,
             newQr.Token);
+
+        await _unitOfWork.SaveChangesAsync(ct);
 
         return new GenerateQrResult
         {

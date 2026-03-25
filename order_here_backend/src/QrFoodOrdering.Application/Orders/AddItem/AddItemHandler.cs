@@ -1,9 +1,11 @@
 using Microsoft.Extensions.Logging;
 using QrFoodOrdering.Application.Abstractions;
+using QrFoodOrdering.Application.Common.Errors;
 using QrFoodOrdering.Application.Common.Exceptions;
 using QrFoodOrdering.Application.Common.Idempotency;
 using QrFoodOrdering.Application.Common.Observability;
 using QrFoodOrdering.Application.Common.Resilience;
+using QrFoodOrdering.Application.Common.Validation;
 using QrFoodOrdering.Domain.Orders;
 
 namespace QrFoodOrdering.Application.Orders.AddItem;
@@ -40,13 +42,22 @@ public sealed class AddItemHandler
 
         // 1) Application-level validation
         if (string.IsNullOrWhiteSpace(command.ProductName))
-            throw new InvalidRequestException("ProductName is required.");
+            throw new InvalidRequestException(
+                ApplicationErrorCodes.ProductNameRequired,
+                RequestValidationMessages.ProductNameRequired
+            );
 
         if (command.Quantity <= 0)
-            throw new InvalidRequestException("Quantity must be positive.");
+            throw new InvalidRequestException(
+                ApplicationErrorCodes.InvalidQuantity,
+                RequestValidationMessages.QuantityMustBeGreaterThanZero
+            );
 
         if (command.UnitPrice <= 0)
-            throw new InvalidRequestException("UnitPrice must be positive.");
+            throw new InvalidRequestException(
+                ApplicationErrorCodes.UnitPriceInvalid,
+                RequestValidationMessages.UnitPriceMustBePositive
+            );
 
         var traceId = _trace.TraceId;
 
@@ -56,7 +67,7 @@ public sealed class AddItemHandler
             {
                 TraceId = traceId,
                 OrderId = command.OrderId,
-                Action = "ADD_ITEM",
+                Action = LogActions.AddItem,
             }
         );
 
@@ -71,8 +82,8 @@ public sealed class AddItemHandler
                 {
                     TraceId = traceId,
                     OrderId = command.OrderId,
-                    Action = "ADD_ITEM",
-                    Status = "SUCCESS",
+                    Action = LogActions.AddItem,
+                    Status = LogStatuses.Success,
                     Note = "No idempotency key provided",
                 }
             );
@@ -90,7 +101,7 @@ public sealed class AddItemHandler
                 {
                     TraceId = traceId,
                     OrderId = command.OrderId,
-                    Action = "ADD_ITEM",
+                    Action = LogActions.AddItem,
                     IdempotencyKey = command.IdempotencyKey,
                 }
             );
@@ -117,8 +128,8 @@ public sealed class AddItemHandler
                 {
                     TraceId = traceId,
                     OrderId = command.OrderId,
-                    Action = "ADD_ITEM",
-                    Status = "SUCCESS",
+                    Action = LogActions.AddItem,
+                    Status = LogStatuses.Success,
                 }
             );
         }
@@ -131,8 +142,8 @@ public sealed class AddItemHandler
                 {
                     TraceId = traceId,
                     OrderId = command.OrderId,
-                    Action = "ADD_ITEM",
-                    Status = "FAILED",
+                    Action = LogActions.AddItem,
+                    Status = LogStatuses.Failed,
                 }
             );
             throw;
@@ -145,7 +156,10 @@ public sealed class AddItemHandler
 
         var order =
             await _repo.GetByIdAsync(command.OrderId, ct)
-            ?? throw new NotFoundException("Order not found");
+            ?? throw new NotFoundException(
+                ApplicationErrorCodes.OrderNotFound,
+                "Order not found"
+            );
 
         var item = new OrderItem(
             Guid.NewGuid(),

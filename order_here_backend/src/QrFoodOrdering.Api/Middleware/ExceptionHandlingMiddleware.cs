@@ -1,7 +1,9 @@
 using System.Net;
 using System.Text.Json;
 using QrFoodOrdering.Api.Contracts.Common;
+using QrFoodOrdering.Application.Common.Errors;
 using QrFoodOrdering.Application.Common.Exceptions;
+using QrFoodOrdering.Domain.Common;
 
 namespace QrFoodOrdering.Api.Middleware;
 
@@ -37,11 +39,12 @@ public sealed class ExceptionHandlingMiddleware : IMiddleware
                 e.Message
             ),
             ConflictException e => (HttpStatusCode.Conflict, e.ErrorCode, e.Message),
-            NotFoundException e => (HttpStatusCode.NotFound, "NOT_FOUND", e.Message),
+            NotFoundException e => (HttpStatusCode.NotFound, e.ErrorCode, e.Message),
+            DomainException e => (MapDomainExceptionStatus(e.ErrorCode), e.ErrorCode, e.Message),
 
             _ => (
                 HttpStatusCode.InternalServerError,
-                "UNEXPECTED_ERROR",
+                ApiErrorCodes.UnexpectedError,
                 "Unexpected error occurred."
             ),
         };
@@ -58,8 +61,22 @@ public sealed class ExceptionHandlingMiddleware : IMiddleware
     {
         return errorCode switch
         {
-            "QR_NOT_FOUND" => HttpStatusCode.NotFound,
-            "TABLE_NOT_FOUND" => HttpStatusCode.NotFound,
+            ApplicationErrorCodes.QrNotFound => HttpStatusCode.NotFound,
+            ApplicationErrorCodes.TableNotFound => HttpStatusCode.NotFound,
+            _ => HttpStatusCode.BadRequest,
+        };
+    }
+
+    private static HttpStatusCode MapDomainExceptionStatus(string errorCode)
+    {
+        return errorCode switch
+        {
+            DomainErrorCodes.TableAlreadyInactive => HttpStatusCode.Conflict,
+            DomainErrorCodes.TableAlreadyActive => HttpStatusCode.Conflict,
+            DomainErrorCodes.TableInactive => HttpStatusCode.Conflict,
+            DomainErrorCodes.OrderNotOpen => HttpStatusCode.Conflict,
+            DomainErrorCodes.OrderAlreadyCompleted => HttpStatusCode.Conflict,
+            DomainErrorCodes.CurrencyMismatch => HttpStatusCode.Conflict,
             _ => HttpStatusCode.BadRequest,
         };
     }

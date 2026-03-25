@@ -3,14 +3,15 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using QrFoodOrdering.Application.Abstractions;
+using QrFoodOrdering.Application.Common.Errors;
 using QrFoodOrdering.Application.Common.Exceptions;
 using QrFoodOrdering.Application.Orders.CloseOrder;
 using QrFoodOrdering.Domain.Orders;
 using Xunit;
 
-namespace QrFoodOrdering.Tests;
+namespace QrFoodOrdering.UnitTests;
 
-public class CloseOrderHandlerTests
+public class CloseOrderHandlerUnitTests
 {
     private sealed class InMemoryOrderRepository : IOrderRepository
     {
@@ -69,7 +70,7 @@ public class CloseOrderHandlerTests
         var order = new Order(Guid.NewGuid(), Guid.NewGuid());
         await repo.AddAsync(order, CancellationToken.None);
 
-        await handler.Handle(order.Id, CancellationToken.None);
+        await handler.Handle(new CloseOrderCommand(order.Id), CancellationToken.None);
 
         Assert.Equal(OrderStatus.Completed, repo.Store[order.Id].Status);
         Assert.Equal(1, repo.UpdateCalls);
@@ -87,7 +88,7 @@ public class CloseOrderHandlerTests
         order.Close();
         await repo.AddAsync(order, CancellationToken.None);
 
-        await handler.Handle(order.Id, CancellationToken.None);
+        await handler.Handle(new CloseOrderCommand(order.Id), CancellationToken.None);
 
         // still completed and no extra update
         Assert.Equal(OrderStatus.Completed, repo.Store[order.Id].Status);
@@ -102,7 +103,9 @@ public class CloseOrderHandlerTests
         var uow = new FakeUnitOfWork();
         var handler = new CloseOrderHandler(repo, uow);
 
-        await Assert.ThrowsAsync<NotFoundException>(() =>
-            handler.Handle(Guid.NewGuid(), CancellationToken.None));
+        var ex = await Assert.ThrowsAsync<NotFoundException>(() =>
+            handler.Handle(new CloseOrderCommand(Guid.NewGuid()), CancellationToken.None));
+
+        Assert.Equal(ApplicationErrorCodes.OrderNotFound, ex.ErrorCode);
     }
 }

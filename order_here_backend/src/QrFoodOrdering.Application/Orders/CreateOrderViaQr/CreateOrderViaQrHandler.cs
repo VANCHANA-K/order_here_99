@@ -2,9 +2,11 @@ using System.Text.Json;
 using System.Collections.Concurrent;
 using QrFoodOrdering.Application.Abstractions;
 using QrFoodOrdering.Application.Common.Audit;
+using QrFoodOrdering.Application.Common.Errors;
 using QrFoodOrdering.Application.Common.Exceptions;
 using QrFoodOrdering.Application.Common.Idempotency;
 using QrFoodOrdering.Application.Common.Observability;
+using QrFoodOrdering.Application.Common.Validation;
 using QrFoodOrdering.Application.Tables;
 using QrFoodOrdering.Domain.Orders;
 
@@ -49,25 +51,31 @@ public sealed class CreateOrderViaQrHandler
         // 1) Validate table
         var table = await _tables.GetByIdAsync(cmd.TableId, ct);
         if (table is null)
-            throw new InvalidRequestException("TABLE_NOT_FOUND", "Table not found.");
+            throw new InvalidRequestException(
+                ApplicationErrorCodes.TableNotFound,
+                "Table not found."
+            );
 
         if (!table.IsActive)
-            throw new ConflictException("TABLE_INACTIVE", "Table is inactive.");
+            throw new ConflictException(ApplicationErrorCodes.TableInactive, "Table is inactive.");
 
         // 2) Validate items
         if (cmd.Items is null || cmd.Items.Count == 0)
-            throw new InvalidRequestException("EMPTY_ITEMS", "At least one item is required.");
+            throw new InvalidRequestException(
+                ApplicationErrorCodes.EmptyItems,
+                RequestValidationMessages.EmptyItems
+            );
 
         foreach (var it in cmd.Items)
         {
             if (it.Quantity <= 0)
                 throw new InvalidRequestException(
-                    "INVALID_QTY",
-                    "Quantity must be greater than 0."
+                    ApplicationErrorCodes.InvalidQuantity,
+                    RequestValidationMessages.QuantityMustBeGreaterThanZero
                 );
         }
 
-        var key = cmd.IdempotencyKey;
+        var key = NormalizeIdempotencyKey(cmd.IdempotencyKey);
         if (string.IsNullOrWhiteSpace(key))
         {
             return await CreateOrderAsync(cmd, key, ct);
@@ -120,19 +128,22 @@ public sealed class CreateOrderViaQrHandler
         var menuItems = await _menu.GetByIdsAsync(cmd.Items.Select(x => x.MenuItemId).ToList(), ct);
 
         if (menuItems.Count != cmd.Items.Count)
-            throw new InvalidRequestException("ITEM_NOT_FOUND", "One or more items do not exist.");
+            throw new InvalidRequestException(
+                ApplicationErrorCodes.ItemNotFound,
+                "One or more items do not exist."
+            );
 
         foreach (var mi in menuItems)
         {
             if (!mi.IsActive)
                 throw new InvalidRequestException(
-                    "ITEM_INACTIVE",
+                    ApplicationErrorCodes.ItemInactive,
                     "One or more items are inactive."
                 );
 
             if (!mi.IsAvailable)
                 throw new InvalidRequestException(
-                    "ITEM_UNAVAILABLE",
+                    ApplicationErrorCodes.ItemUnavailable,
                     "One or more items are unavailable."
                 );
         }
@@ -150,9 +161,6 @@ public sealed class CreateOrderViaQrHandler
 
         await _orders.AddAsync(order, ct);
 
-        if (!string.IsNullOrWhiteSpace(key))
-            await _idempotency.MarkAsync(key, order.Id, ct);
-
         var auditMetadata = JsonSerializer.Serialize(
             new
             {
@@ -164,10 +172,16 @@ public sealed class CreateOrderViaQrHandler
             }
         );
 
-        await _audit.LogAsync("OrderPlacedViaQR", "Order", order.Id, auditMetadata);
+        await _audit.LogAsync(AuditEvents.OrderPlacedViaQr, AuditEntities.Order, order.Id, auditMetadata);
 
         await _uow.SaveChangesAsync(ct);
 
+        if (!string.IsNullOrWhiteSpace(key))
+            await _idempotency.MarkAsync(key, order.Id, ct);
+
         return new CreateOrderViaQrResult(order.Id, order.Status, order.CreatedAtUtc);
     }
+
+    private static string NormalizeIdempotencyKey(string? key) =>
+        string.IsNullOrWhiteSpace(key) ? string.Empty : $"orders:create-via-qr:{key}";
 }

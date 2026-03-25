@@ -40,10 +40,10 @@ public class Order
     public Order(Guid id, Guid tableId, OrderStatus status, DateTime? createdAtUtc = null)
     {
         if (id == Guid.Empty)
-            throw new DomainException("Order id is required");
+            throw new DomainException(DomainErrorCodes.OrderIdRequired, "Order id is required");
 
         if (tableId == Guid.Empty)
-            throw new DomainException("Table id is required");
+            throw new DomainException(DomainErrorCodes.TableIdRequired, "Table id is required");
 
         Id = id;
         TableId = tableId;
@@ -54,7 +54,9 @@ public class Order
     public void AddItem(OrderItem item)
     {
         EnsureOrderIsOpen(); // R1
-        _items.Add(item ?? throw new DomainException("Item is required"));
+        _items.Add(
+            item ?? throw new DomainException(DomainErrorCodes.ItemRequired, "Item is required")
+        );
     }
 
     public void Close()
@@ -66,7 +68,10 @@ public class Order
     public void Cancel()
     {
         if (Status == OrderStatus.Completed)
-            throw new DomainException("Cannot cancel a completed order");
+            throw new DomainException(
+                DomainErrorCodes.OrderAlreadyCompleted,
+                "Cannot cancel a completed order"
+            );
 
         Status = OrderStatus.Cancelled;
     }
@@ -81,6 +86,6 @@ public class Order
     private void EnsureOrderIsOpen()
     {
         if (Status == OrderStatus.Completed || Status == OrderStatus.Cancelled)
-            throw new DomainException("Order is not open");
+            throw new DomainException(DomainErrorCodes.OrderNotOpen, "Order is not open");
     }
 }

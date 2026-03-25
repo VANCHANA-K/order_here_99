@@ -1,4 +1,6 @@
+using QrFoodOrdering.Application.Abstractions;
 using QrFoodOrdering.Application.Common.Audit;
+using QrFoodOrdering.Application.Common.Errors;
 using QrFoodOrdering.Application.Common.Exceptions;
 
 namespace QrFoodOrdering.Application.Tables.UpdateStatus;
@@ -6,11 +8,13 @@ namespace QrFoodOrdering.Application.Tables.UpdateStatus;
 public sealed class UpdateTableStatusHandler
 {
     private readonly ITablesRepository _repo;
+    private readonly IUnitOfWork _uow;
     private readonly IAuditLogger _audit;
 
-    public UpdateTableStatusHandler(ITablesRepository repo, IAuditLogger audit)
+    public UpdateTableStatusHandler(ITablesRepository repo, IUnitOfWork uow, IAuditLogger audit)
     {
         _repo = repo;
+        _uow = uow;
         _audit = audit;
     }
 
@@ -18,7 +22,10 @@ public sealed class UpdateTableStatusHandler
     {
         var table =
             await _repo.GetByIdAsync(cmd.TableId, ct)
-            ?? throw new NotFoundException("TABLE_NOT_FOUND");
+            ?? throw new NotFoundException(
+                ApplicationErrorCodes.TableNotFound,
+                "Table not found."
+            );
 
         if (cmd.Activate)
         {
@@ -29,8 +36,14 @@ public sealed class UpdateTableStatusHandler
             table.Deactivate();
         }
 
-        await _repo.SaveChangesAsync(ct);
+        await _uow.SaveChangesAsync(ct);
 
-        await _audit.LogAsync("TableStatusChanged", "Table", table.Id, new { table.IsActive }, ct);
+        await _audit.LogAsync(
+            AuditEvents.TableStatusChanged,
+            AuditEntities.Table,
+            table.Id,
+            new { table.IsActive },
+            ct
+        );
     }
 }
