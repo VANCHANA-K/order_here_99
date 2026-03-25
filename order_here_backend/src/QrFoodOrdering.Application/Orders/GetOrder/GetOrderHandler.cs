@@ -11,14 +11,14 @@ public sealed class GetOrderHandler
         _repository = repository;
     }
 
-    public async Task<GetOrderResult?> Handle(Guid orderId, CancellationToken ct)
+    public async Task<GetOrderResult?> Handle(GetOrderQuery query, CancellationToken ct)
     {
-        var order = await _repository.GetByIdAsync(orderId, ct);
+        var order = await _repository.GetByIdAsync(query.OrderId, ct);
         if (order is null) return null;
 
         return new GetOrderResult(
             order.Id,
-            order.Status.ToString(),
+            order.Status,
             order.TotalAmount.Amount
         );
     }

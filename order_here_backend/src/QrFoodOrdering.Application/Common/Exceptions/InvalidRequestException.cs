@@ -9,10 +9,4 @@ public sealed class InvalidRequestException : Exception
     {
         ErrorCode = errorCode;
     }
-
-    public InvalidRequestException(string message)
-        : base(message)
-    {
-        ErrorCode = "INVALID_REQUEST";
-    }
 }

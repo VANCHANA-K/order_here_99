@@ -27,16 +27,28 @@ public class OrderItem
         Money unitPrice)
     {
         if (id == Guid.Empty)
-            throw new DomainException("OrderItem id is required");
+            throw new DomainException(
+                DomainErrorCodes.OrderItemIdRequired,
+                "Order item id is required"
+            );
 
         if (string.IsNullOrWhiteSpace(productName))
-            throw new DomainException("Product name is required");
+            throw new DomainException(
+                DomainErrorCodes.ProductNameRequired,
+                "Product name is required"
+            );
 
         if (quantity <= 0)
-            throw new DomainException("Quantity must be greater than zero");
+            throw new DomainException(
+                DomainErrorCodes.QuantityInvalid,
+                "Quantity must be greater than zero"
+            );
 
         UnitPrice = unitPrice
-            ?? throw new DomainException("Unit price is required");
+            ?? throw new DomainException(
+                DomainErrorCodes.UnitPriceRequired,
+                "Unit price is required"
+            );
 
         Id = id;
         ProductName = productName;

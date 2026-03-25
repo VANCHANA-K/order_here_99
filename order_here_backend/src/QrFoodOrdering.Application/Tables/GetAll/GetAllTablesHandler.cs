@@ -19,11 +19,9 @@ public sealed class GetAllTablesHandler
         return tables
             .Select(t => new GetAllTablesResult(
                 t.Id,
-                // Map domain Code as Name for API shape
                 t.Code,
                 t.IsActive ? "Active" : "Inactive"
             ))
             .ToList();
     }
 }
-

@@ -16,7 +16,7 @@ public sealed class Table
     public Table(string code)
     {
         if (string.IsNullOrWhiteSpace(code))
-            throw new DomainException("TABLE_CODE_REQUIRED");
+            throw new DomainException(DomainErrorCodes.TableCodeRequired, "Table code is required");
 
         Id = Guid.NewGuid();
         Code = code;
@@ -26,7 +26,10 @@ public sealed class Table
     public void Deactivate()
     {
         if (!IsActive)
-            throw new DomainException("TABLE_ALREADY_INACTIVE");
+            throw new DomainException(
+                DomainErrorCodes.TableAlreadyInactive,
+                "Table is already inactive"
+            );
 
         IsActive = false;
     }
@@ -34,7 +37,10 @@ public sealed class Table
     public void Activate()
     {
         if (IsActive)
-            throw new DomainException("TABLE_ALREADY_ACTIVE");
+            throw new DomainException(
+                DomainErrorCodes.TableAlreadyActive,
+                "Table is already active"
+            );
 
         IsActive = true;
     }
@@ -43,6 +49,6 @@ public sealed class Table
     public void EnsureActive()
     {
         if (!IsActive)
-            throw new DomainException("TABLE_INACTIVE");
+            throw new DomainException(DomainErrorCodes.TableInactive, "Table is inactive");
     }
 }

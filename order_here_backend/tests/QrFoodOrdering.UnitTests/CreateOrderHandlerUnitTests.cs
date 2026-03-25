@@ -3,11 +3,15 @@ using QrFoodOrdering.Application.Abstractions;
 using QrFoodOrdering.Application.Common.Idempotency;
 using QrFoodOrdering.Application.Common.Observability;
 using QrFoodOrdering.Application.Orders.CreateOrder;
+using QrFoodOrdering.Application.Tables;
 using QrFoodOrdering.Domain.Orders;
+using QrFoodOrdering.Domain.Tables;
+using QrFoodOrdering.Application.Common.Exceptions;
+using QrFoodOrdering.Application.Common.Errors;
 
-namespace QrFoodOrdering.Tests;
+namespace QrFoodOrdering.UnitTests;
 
-public class CreateOrderHandlerTests
+public class CreateOrderHandlerUnitTests
 {
     private sealed class InMemoryOrderRepository : IOrderRepository
     {
@@ -56,6 +60,26 @@ public class CreateOrderHandlerTests
         }
     }
 
+    private sealed class InMemoryTablesRepository : ITablesRepository
+    {
+        public readonly Dictionary<Guid, Table> Store = new();
+
+        public Task AddAsync(Table table, CancellationToken ct)
+        {
+            Store[table.Id] = table;
+            return Task.CompletedTask;
+        }
+
+        public Task<Table?> GetByIdAsync(Guid id, CancellationToken ct)
+        {
+            Store.TryGetValue(id, out var table);
+            return Task.FromResult(table);
+        }
+
+        public Task<List<Table>> GetAllAsync(CancellationToken ct) =>
+            Task.FromResult(Store.Values.ToList());
+    }
+
     private sealed class FakeUnitOfWork : IUnitOfWork
     {
         public int SaveChangesCalls { get; private set; }
@@ -91,10 +115,14 @@ public class CreateOrderHandlerTests
     public async Task Create_order_should_save_once_and_commit()
     {
         var repo = new InMemoryOrderRepository();
+        var tables = new InMemoryTablesRepository();
         var store = new InMemoryIdempotencyStore();
         var uow = new FakeUnitOfWork();
+        var table = new Table("A01");
+        await tables.AddAsync(table, CancellationToken.None);
         var handler = new CreateOrderHandler(
             repo,
+            tables,
             store,
             uow,
             NullLogger<CreateOrderHandler>.Instance,
@@ -102,7 +130,7 @@ public class CreateOrderHandlerTests
         );
 
         var result = await handler.Handle(
-            new CreateOrderCommand(Guid.NewGuid(), "abc"),
+            new CreateOrderCommand(table.Id, "abc"),
             CancellationToken.None
         );
 
@@ -116,14 +144,19 @@ public class CreateOrderHandlerTests
     public async Task Create_order_should_scope_idempotency_key_by_use_case()
     {
         var repo = new InMemoryOrderRepository();
+        var tables = new InMemoryTablesRepository();
         var store = new InMemoryIdempotencyStore();
         var uow = new FakeUnitOfWork();
         var existingOrderId = Guid.NewGuid();
+        var table = new Table("A02");
+
+        await tables.AddAsync(table, CancellationToken.None);
 
         await store.MarkAsync("abc", existingOrderId, CancellationToken.None);
 
         var handler = new CreateOrderHandler(
             repo,
+            tables,
             store,
             uow,
             NullLogger<CreateOrderHandler>.Instance,
@@ -131,12 +164,64 @@ public class CreateOrderHandlerTests
         );
 
         var result = await handler.Handle(
-            new CreateOrderCommand(Guid.NewGuid(), "abc"),
+            new CreateOrderCommand(table.Id, "abc"),
             CancellationToken.None
         );
 
         Assert.NotEqual(existingOrderId, result.OrderId);
         Assert.Equal(1, repo.AddCalls);
         Assert.Equal(1, uow.SaveChangesCalls);
+    }
+
+    [Fact]
+    public async Task Create_order_with_unknown_table_should_throw_not_found()
+    {
+        var repo = new InMemoryOrderRepository();
+        var tables = new InMemoryTablesRepository();
+        var store = new InMemoryIdempotencyStore();
+        var uow = new FakeUnitOfWork();
+        var handler = new CreateOrderHandler(
+            repo,
+            tables,
+            store,
+            uow,
+            NullLogger<CreateOrderHandler>.Instance,
+            new StubTraceContext()
+        );
+
+        var ex = await Assert.ThrowsAsync<NotFoundException>(() =>
+            handler.Handle(new CreateOrderCommand(Guid.NewGuid(), "abc"), CancellationToken.None)
+        );
+
+        Assert.Equal(ApplicationErrorCodes.TableNotFound, ex.ErrorCode);
+        Assert.Equal(0, repo.AddCalls);
+    }
+
+    [Fact]
+    public async Task Create_order_with_inactive_table_should_throw_conflict()
+    {
+        var repo = new InMemoryOrderRepository();
+        var tables = new InMemoryTablesRepository();
+        var store = new InMemoryIdempotencyStore();
+        var uow = new FakeUnitOfWork();
+        var table = new Table("A03");
+        table.Deactivate();
+        await tables.AddAsync(table, CancellationToken.None);
+
+        var handler = new CreateOrderHandler(
+            repo,
+            tables,
+            store,
+            uow,
+            NullLogger<CreateOrderHandler>.Instance,
+            new StubTraceContext()
+        );
+
+        var ex = await Assert.ThrowsAsync<ConflictException>(() =>
+            handler.Handle(new CreateOrderCommand(table.Id, "abc"), CancellationToken.None)
+        );
+
+        Assert.Equal(ApplicationErrorCodes.TableInactive, ex.ErrorCode);
+        Assert.Equal(0, repo.AddCalls);
     }
 }

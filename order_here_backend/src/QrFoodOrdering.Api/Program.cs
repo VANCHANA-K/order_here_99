@@ -1,8 +1,13 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.EntityFrameworkCore;
 // API Middleware
 using QrFoodOrdering.Api.Contracts.Common;
+using QrFoodOrdering.Api.Controllers;
+using QrFoodOrdering.Api.Infrastructure;
 using QrFoodOrdering.Api.Middleware;
+using QrFoodOrdering.Api.Swagger;
+using QrFoodOrdering.Api.Validation;
 // Application
 using QrFoodOrdering.Application;
 using QrFoodOrdering.Application.Common.Observability;
@@ -15,11 +20,20 @@ using QrFoodOrdering.Infrastructure.Persistence;
 var builder = WebApplication.CreateBuilder(args);
 
 // Controllers
-builder.Services.AddControllers();
+var controllers = builder.Services.AddControllers();
+if (!builder.Environment.IsEnvironment("Test"))
+{
+    controllers.ConfigureApplicationPartManager(manager =>
+        manager.FeatureProviders.Add(new ExcludeControllerFeatureProvider(typeof(TestErrorController)))
+    );
+}
 
 // Swagger
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(options =>
+{
+    options.OperationFilter<ApiErrorResponseExamplesOperationFilter>();
+});
 builder.Services.AddTransient<ExceptionHandlingMiddleware>();
 
 // CORS (Frontend Dev)
@@ -46,14 +60,9 @@ builder.Services.Configure<ApiBehaviorOptions>(options =>
         if (string.IsNullOrWhiteSpace(traceId))
             traceId = context.HttpContext.TraceIdentifier;
 
-        var firstError = context
-            .ModelState.SelectMany(kvp => kvp.Value!.Errors)
-            .Select(e => e.ErrorMessage)
-            .FirstOrDefault();
+        var (errorCode, message) = ModelValidationErrorMapper.Map(context.ModelState);
 
-        var message = string.IsNullOrWhiteSpace(firstError) ? "Invalid request." : firstError;
-
-        var body = new ApiErrorResponse("VALIDATION_ERROR", message, traceId);
+        var body = new ApiErrorResponse(errorCode, message, traceId);
 
         return new BadRequestObjectResult(body);
     };
@@ -106,7 +115,7 @@ app.Use(
                 traceId = context.TraceIdentifier;
 
             var payload = new ApiErrorResponse(
-                "ENDPOINT_NOT_FOUND",
+                ApiErrorCodes.EndpointNotFound,
                 "The requested endpoint was not found.",
                 traceId
             );
@@ -145,3 +154,5 @@ if (app.Environment.IsDevelopment())
 }
 
 app.Run();
+
+public partial class Program { }

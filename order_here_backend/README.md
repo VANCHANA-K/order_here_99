@@ -1,6 +1,6 @@
-# Order Here – Backend (QR Food Ordering Platform)
+# Order Here – Backend
 
-A production-grade QR Code Food Ordering Backend built with:
+A QR food ordering backend built with:
 
 - ASP.NET Core (.NET 9)
 - Clean Architecture (Domain / Application / Infrastructure / API)
@@ -8,108 +8,35 @@ A production-grade QR Code Food Ordering Backend built with:
 - xUnit (Testing)
 - GitHub Actions CI
 
----
-
-# 🏗 Repository Structure
-
-```
-order_here/
-├── order_here_backend/
-│   ├── QrFoodOrdering.sln
-│   ├── src/
-│   │   ├── QrFoodOrdering.Api
-│   │   ├── QrFoodOrdering.Application
-│   │   ├── QrFoodOrdering.Domain
-│   │   └── QrFoodOrdering.Infrastructure
-│   └── tests/
-│       └── QrFoodOrdering.Tests
-│
-└── .github/workflows/
-    └── ci.yml
-```
-
----
-
-# 🔧 Prerequisites
-
 - .NET SDK 9.x
 - Git
 
-Check installed SDK:
-
-```bash
-dotnet --version
-```
-
----
-
-# 🚀 Clone Repository
-
-```bash
-git clone https://github.com/VANCHANA-K/order_here_99.git
-cd order_here/order_here_backend
-```
-
----
-
-# 🟢 Run Backend
-
-# 🧪 Run Tests
+## Quick Start
 
 From `order_here_backend`:
-
-
-
-Restore:
 
 ```bash
 dotnet restore QrFoodOrdering.sln
-```
-
-```bash
-
-dotnet test QrFoodOrdering.sln
-```
-
-Build:
-
-```bash
 dotnet build QrFoodOrdering.sln
-```
-
-Run API:
-
-```bash
 dotnet run --project src/QrFoodOrdering.Api/QrFoodOrdering.Api.csproj
 ```
 
-API runs at:
+API runs at `http://localhost:5132`.
 
-```
-http://localhost:5132
-```
-
----
-
-# 🧪 Run Tests
-
-From `order_here_backend`:
+## Tests
 
 ```bash
 dotnet test QrFoodOrdering.sln
 ```
 
-Expected result:
+Run test projects separately when needed:
 
+```bash
+dotnet test tests/QrFoodOrdering.UnitTests/QrFoodOrdering.UnitTests.csproj
+dotnet test tests/QrFoodOrdering.IntegrationTests/QrFoodOrdering.IntegrationTests.csproj
 ```
-Test summary: total: X, failed: 0
-```
 
-All tests must pass before merging.
-
----
-
-# 🟢 Health Check
+## Health Check
 
 ```bash
 curl http://localhost:5132/health
@@ -129,9 +56,20 @@ Response includes:
 - `x-trace-id` header
 - JSON payload
 
----
+## API Error Semantics
 
-# 🧠 Architecture
+Detailed API error policy lives in [`docs/API_ERROR_SEMANTICS.md`](/Users/viic/Desktop/order_here/order_here_backend/docs/API_ERROR_SEMANTICS.md).
+
+In short:
+
+- all non-success responses use `ApiErrorResponse`
+- `400/404/409/500` have fixed semantics
+- resource not found uses specific codes such as `ORDER_NOT_FOUND`
+- `INVALID_REQUEST` is reserved as a final fallback only
+- Swagger publishes both error and success examples for documented endpoints
+- every new request DTO must include annotations, a `ModelValidationErrorMapper` rule, and an integration test for invalid payloads
+
+## Architecture
 
 Backend follows Clean Architecture:
 
@@ -150,15 +88,15 @@ Infrastructure → Application
 
 Domain layer has zero external dependencies.
 
----
-
-# 🔁 CI Pipeline
+## CI Pipeline
 
 GitHub Actions runs:
 
 - dotnet restore
+- dotnet format --verify-no-changes
 - dotnet build
-- dotnet test
+- dotnet test (`UnitTests`)
+- dotnet test (`IntegrationTests`)
 
 Target solution:
 
@@ -168,36 +106,10 @@ order_here_backend/QrFoodOrdering.sln
 
 CI must pass before merge to main.
 
----
-
-# 📍 Current Scope (Sprint 3 – Day 1)
-
-Table Management (Staff Foundation)
-
-- Create Table API
-- Update Table Status
-- Table validation
-- Audit logging
-
-System verified with:
-
-- Successful build
-- Passing test suite
-- Health endpoint validation
-
----
-
-# 🔐 Environment
+## Environment
 
 - Development (default)
 - Test (CI)
 
 No secrets stored in repository.
 SQLite is used for development only.
-
----
-
-# 👨‍💻 Maintainer
-
-Vanchana Karoon  
-Production-Grade Clean Architecture System

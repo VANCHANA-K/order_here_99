@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
+using QrFoodOrdering.Api.Contracts.Common;
 using QrFoodOrdering.Api.Contracts.Orders;
+using QrFoodOrdering.Application.Common.Errors;
 using QrFoodOrdering.Application.Orders.AddItem;
 using QrFoodOrdering.Application.Orders.CloseOrder;
 using QrFoodOrdering.Application.Orders.CreateOrder;
@@ -11,20 +13,43 @@ namespace QrFoodOrdering.Api.Controllers;
 
 [ApiController]
 [Route("api/v1/orders")]
+[Produces("application/json")]
 public sealed class OrdersController : ControllerBase
 {
+    private readonly CreateOrderHandler _createOrderHandler;
+    private readonly AddItemHandler _addItemHandler;
+    private readonly CreateOrderViaQrHandler _createOrderViaQrHandler;
+    private readonly GetOrderHandler _getOrderHandler;
+    private readonly CloseOrderHandler _closeOrderHandler;
+
+    public OrdersController(
+        CreateOrderHandler createOrderHandler,
+        AddItemHandler addItemHandler,
+        CreateOrderViaQrHandler createOrderViaQrHandler,
+        GetOrderHandler getOrderHandler,
+        CloseOrderHandler closeOrderHandler
+    )
+    {
+        _createOrderHandler = createOrderHandler;
+        _addItemHandler = addItemHandler;
+        _createOrderViaQrHandler = createOrderViaQrHandler;
+        _getOrderHandler = getOrderHandler;
+        _closeOrderHandler = closeOrderHandler;
+    }
+
     [HttpPost]
+    [ProducesResponseType(typeof(CreateOrderResponse), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<CreateOrderResponse>> Create(
         [FromBody] QrFoodOrdering.Api.Contracts.Orders.CreateOrderRequest request,
         [FromHeader(Name = "Idempotency-Key")] string? idempotencyKey,
-        [FromServices] CreateOrderHandler handler,
         CancellationToken ct
     )
     {
-        if (request.TableId == Guid.Empty)
-            throw new InvalidRequestException("TABLE_ID_REQUIRED", "TableId is required.");
-
-        var result = await handler.Handle(
+        var result = await _createOrderHandler.Handle(
             new CreateOrderCommand(request.TableId, idempotencyKey),
             ct
         );
@@ -37,16 +62,20 @@ public sealed class OrdersController : ControllerBase
     }
 
     [HttpPost("{id:guid}/items")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> AddItem(
         Guid id,
         [FromBody] AddItemRequest request,
         // 🔹 Sprint 2 — Day 4 (เตรียมไว้): Idempotency-Key สำหรับ AddItem
         [FromHeader(Name = "Idempotency-Key")] string? idempotencyKey,
-        [FromServices] AddItemHandler handler,
         CancellationToken ct
     )
     {
-        await handler.Handle(
+        await _addItemHandler.Handle(
             new AddItemCommand(
                 id,
                 request.ProductName,
@@ -61,9 +90,13 @@ public sealed class OrdersController : ControllerBase
     }
 
     [HttpPost("qr")]
+    [ProducesResponseType(typeof(CreateOrderViaQrResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<CreateOrderViaQrResponse>> CreateViaQr(
         [FromBody] CreateOrderViaQrRequest request,
-        [FromServices] CreateOrderViaQrHandler handler,
         CancellationToken ct)
     {
         var cmd = new CreateOrderViaQrCommand(
@@ -72,35 +105,49 @@ public sealed class OrdersController : ControllerBase
             request.IdempotencyKey
         );
 
-        var result = await handler.Handle(cmd, ct);
+        var result = await _createOrderViaQrHandler.Handle(cmd, ct);
 
         return Ok(new CreateOrderViaQrResponse(
             result.OrderId,
-            result.Status.ToString().ToUpperInvariant(),
+            OrderStatusResponseMapper.ToResponseStatus(result.Status),
             result.CreatedAtUtc
         ));
     }
 
     [HttpGet("{id:guid}")]
+    [ProducesResponseType(typeof(OrderResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<OrderResponse>> GetById(
         Guid id,
-        [FromServices] GetOrderHandler handler,
         CancellationToken ct
     )
     {
-        var result = await handler.Handle(id, ct) ?? throw new NotFoundException("Order not found");
+        var result =
+            await _getOrderHandler.Handle(new GetOrderQuery(id), ct)
+            ?? throw new NotFoundException(
+                ApplicationErrorCodes.OrderNotFound,
+                "Order not found"
+            );
 
-        return Ok(new OrderResponse(result.OrderId, result.Status, result.TotalAmount));
+        return Ok(new OrderResponse(
+            result.OrderId,
+            OrderStatusResponseMapper.ToResponseStatus(result.Status),
+            result.TotalAmount
+        ));
     }
 
     [HttpPost("{id:guid}/close")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> Close(
         Guid id,
-        [FromServices] CloseOrderHandler handler,
         CancellationToken ct
     )
     {
-        await handler.Handle(id, ct);
+        await _closeOrderHandler.Handle(new CloseOrderCommand(id), ct);
         return NoContent();
     }
 }

@@ -13,7 +13,7 @@ public class AuditService : IAuditService
         _db = db;
     }
 
-    public async Task LogAsync(
+    public Task LogAsync(
         string eventType,
         string entityType,
         Guid entityId,
@@ -26,7 +26,6 @@ public class AuditService : IAuditService
             metadata);
 
         _db.AuditLogs.Add(log);
-
-        await _db.SaveChangesAsync();
+        return Task.CompletedTask;
     }
 }

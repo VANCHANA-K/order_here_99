@@ -2,6 +2,11 @@ namespace QrFoodOrdering.Application.Common.Exceptions;
 
 public sealed class NotFoundException : Exception
 {
-    public NotFoundException(string message) : base(message) { }
-}
+    public string ErrorCode { get; }
 
+    public NotFoundException(string errorCode, string message)
+        : base(message)
+    {
+        ErrorCode = errorCode;
+    }
+}

@@ -1,7 +1,9 @@
+using QrFoodOrdering.Domain.Orders;
+
 namespace QrFoodOrdering.Application.Orders.GetOrder;
 
 public sealed record GetOrderResult(
     Guid OrderId,
-    string Status,
+    OrderStatus Status,
     decimal TotalAmount
 );

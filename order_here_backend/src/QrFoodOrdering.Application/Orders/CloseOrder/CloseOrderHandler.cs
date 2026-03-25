@@ -1,4 +1,5 @@
 using QrFoodOrdering.Application.Abstractions;
+using QrFoodOrdering.Application.Common.Errors;
 using QrFoodOrdering.Application.Common.Exceptions;
 using QrFoodOrdering.Domain.Orders;
 
@@ -15,10 +16,13 @@ public sealed class CloseOrderHandler
         _uow = uow;
     }
 
-    public async Task Handle(Guid orderId, CancellationToken ct)
+    public async Task Handle(CloseOrderCommand command, CancellationToken ct)
     {
-        var order = await _repository.GetByIdAsync(orderId, ct)
-            ?? throw new NotFoundException("Order not found");
+        var order = await _repository.GetByIdAsync(command.OrderId, ct)
+            ?? throw new NotFoundException(
+                ApplicationErrorCodes.OrderNotFound,
+                "Order not found"
+            );
 
         // Double submit safe: if already closed, treat as no-op
         if (order.Status == OrderStatus.Completed)
