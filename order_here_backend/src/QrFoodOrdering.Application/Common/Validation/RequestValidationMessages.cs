@@ -3,6 +3,15 @@ namespace QrFoodOrdering.Application.Common.Validation;
 public static class RequestValidationMessages
 {
     public const string InvalidRequest = "Invalid request.";
+    public const string ConfigurationInvalid = "Configuration is invalid.";
+    public const string AuditLogImmutable = "AuditLogs are immutable and may only be appended.";
+    public const string OperationTimedOut = "The operation timed out. Please retry.";
+    public const string DatabaseUnavailable = "Database is temporarily unavailable.";
+    public const string IdempotencyKeyRequired = "Idempotency-Key header is required.";
+    public const string IdempotencyKeyPayloadMismatch =
+        "Idempotency-Key has already been used with a different request payload.";
+    public const string ConcurrencyConflict =
+        "The resource was modified by another request. Please retry.";
     public const string RequestBodyRequired = "Request body is required.";
     public const string InvalidJson = "Request body contains invalid JSON.";
     public const string TableIdRequired = "TableId is required.";

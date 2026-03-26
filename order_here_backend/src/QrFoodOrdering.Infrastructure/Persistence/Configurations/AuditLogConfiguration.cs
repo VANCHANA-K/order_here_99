@@ -16,6 +16,8 @@ public class AuditLogConfiguration : IEntityTypeConfiguration<AuditLog>
 
         builder.Property(x => x.EntityType).IsRequired().HasMaxLength(100);
 
+        builder.Property(x => x.TraceId).IsRequired().HasMaxLength(64);
+
         builder.Property(x => x.Metadata).HasColumnType("TEXT");
 
         builder.Property(x => x.CreatedAtUtc).IsRequired();

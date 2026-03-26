@@ -6,7 +6,6 @@ namespace QrFoodOrdering.Application.Common.Idempotency;
 
 public interface IIdempotencyStore
 {
-    Task<(bool Found, Guid OrderId)> TryGetAsync(string key, CancellationToken ct);
-    Task MarkAsync(string key, Guid orderId, CancellationToken ct);
+    Task<IdempotencyResult> TryGetAsync(string key, CancellationToken ct);
+    Task MarkAsync(string key, string requestHash, Guid orderId, CancellationToken ct);
 }
-

@@ -11,7 +11,7 @@ internal sealed class OpenApiOrdersExamples : IOpenApiExampleCatalog
             [OpenApiExampleKey.Post(OpenApiRoutePaths.Orders, StatusCodes.Status201Created)] =
                 OpenApiExampleRegistry.Object(("orderId", "11111111-1111-1111-1111-111111111111")),
             [OpenApiExampleKey.Post(OpenApiRoutePaths.Orders, StatusCodes.Status400BadRequest)] =
-                OpenApiExampleRegistry.Error("TABLE_ID_REQUIRED", "TableId is required."),
+                OpenApiExampleRegistry.Error("IDEMPOTENCY_KEY_REQUIRED", "Idempotency-Key header is required."),
             [OpenApiExampleKey.Post(OpenApiRoutePaths.Orders, StatusCodes.Status404NotFound)] =
                 OpenApiExampleRegistry.Error("TABLE_NOT_FOUND", "Table not found."),
             [OpenApiExampleKey.Post(OpenApiRoutePaths.Orders, StatusCodes.Status409Conflict)] =

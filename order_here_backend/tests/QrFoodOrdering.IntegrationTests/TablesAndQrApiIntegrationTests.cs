@@ -102,6 +102,44 @@ public sealed class TablesAndQrApiIntegrationTests
     }
 
     [Fact]
+    public async Task Disable_table_in_parallel_should_return_one_success_and_one_conflict()
+    {
+        await using var factory = new TestApiFactory();
+        using var client = factory.CreateClient();
+
+        var createResponse = await client.PostAsJsonAsync(
+            "/api/v1/tables",
+            new CreateTableRequest("A02-P")
+        );
+        var created = await createResponse.Content.ReadFromJsonAsync<CreatedIdResponse>(JsonOptions);
+        Assert.NotNull(created);
+
+        Task<HttpResponseMessage> SendDisableAsync() =>
+            client.PatchAsync($"/api/v1/tables/{created.Id}/disable", null);
+
+        var responses = await Task.WhenAll(SendDisableAsync(), SendDisableAsync());
+
+        Assert.Contains(responses, x => x.StatusCode == HttpStatusCode.NoContent);
+        Assert.Contains(responses, x => x.StatusCode == HttpStatusCode.Conflict);
+
+        var conflictResponse = responses.Single(x => x.StatusCode == HttpStatusCode.Conflict);
+        var body = await conflictResponse.Content.ReadFromJsonAsync<ApiErrorResponse>(JsonOptions);
+        Assert.NotNull(body);
+        Assert.Contains(
+            body.ErrorCode,
+            new[]
+            {
+                DomainErrorCodes.TableAlreadyInactive,
+                ApplicationErrorCodes.ConcurrencyConflict
+            }
+        );
+
+        var tables = await client.GetFromJsonAsync<List<TableResponse>>("/api/v1/tables", JsonOptions);
+        Assert.NotNull(tables);
+        Assert.Equal("Inactive", Assert.Single(tables).Status);
+    }
+
+    [Fact]
     public async Task Create_table_with_duplicate_code_should_return_conflict_error()
     {
         await using var factory = new TestApiFactory();

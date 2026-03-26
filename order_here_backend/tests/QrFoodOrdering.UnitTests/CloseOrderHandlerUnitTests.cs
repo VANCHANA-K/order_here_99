@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using QrFoodOrdering.Application.Abstractions;
+using QrFoodOrdering.Application.Common.Audit;
 using QrFoodOrdering.Application.Common.Errors;
 using QrFoodOrdering.Application.Common.Exceptions;
 using QrFoodOrdering.Application.Orders.CloseOrder;
@@ -60,12 +61,24 @@ public class CloseOrderHandlerUnitTests
         public ValueTask DisposeAsync() => ValueTask.CompletedTask;
     }
 
+    private sealed class FakeAuditService : IAuditService
+    {
+        public readonly List<(string EventType, string EntityType, Guid EntityId)> Entries = new();
+
+        public Task LogAsync(string eventType, string entityType, Guid entityId, string? metadata = null)
+        {
+            Entries.Add((eventType, entityType, entityId));
+            return Task.CompletedTask;
+        }
+    }
+
     [Fact]
     public async Task Close_order_when_open_should_set_completed_and_persist()
     {
         var repo = new InMemoryOrderRepository();
         var uow = new FakeUnitOfWork();
-        var handler = new CloseOrderHandler(repo, uow);
+        var audit = new FakeAuditService();
+        var handler = new CloseOrderHandler(repo, uow, audit);
 
         var order = new Order(Guid.NewGuid(), Guid.NewGuid());
         await repo.AddAsync(order, CancellationToken.None);
@@ -75,6 +88,7 @@ public class CloseOrderHandlerUnitTests
         Assert.Equal(OrderStatus.Completed, repo.Store[order.Id].Status);
         Assert.Equal(1, repo.UpdateCalls);
         Assert.Equal(1, uow.SaveChangesCalls);
+        Assert.Contains(audit.Entries, x => x.EventType == AuditEvents.OrderClosed && x.EntityId == order.Id);
     }
 
     [Fact]
@@ -82,7 +96,8 @@ public class CloseOrderHandlerUnitTests
     {
         var repo = new InMemoryOrderRepository();
         var uow = new FakeUnitOfWork();
-        var handler = new CloseOrderHandler(repo, uow);
+        var audit = new FakeAuditService();
+        var handler = new CloseOrderHandler(repo, uow, audit);
 
         var order = new Order(Guid.NewGuid(), Guid.NewGuid());
         order.Close();
@@ -94,6 +109,7 @@ public class CloseOrderHandlerUnitTests
         Assert.Equal(OrderStatus.Completed, repo.Store[order.Id].Status);
         Assert.Equal(0, repo.UpdateCalls);
         Assert.Equal(0, uow.SaveChangesCalls);
+        Assert.Empty(audit.Entries);
     }
 
     [Fact]
@@ -101,7 +117,8 @@ public class CloseOrderHandlerUnitTests
     {
         var repo = new InMemoryOrderRepository();
         var uow = new FakeUnitOfWork();
-        var handler = new CloseOrderHandler(repo, uow);
+        var audit = new FakeAuditService();
+        var handler = new CloseOrderHandler(repo, uow, audit);
 
         var ex = await Assert.ThrowsAsync<NotFoundException>(() =>
             handler.Handle(new CloseOrderCommand(Guid.NewGuid()), CancellationToken.None));

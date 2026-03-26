@@ -23,4 +23,14 @@ public class OrderUnitTests
 
         Assert.Equal(OrderStatus.Confirmed, order.Status);
     }
+
+    [Fact]
+    public void MarkPaid_WhenAlreadyConfirmed_Should_Throw()
+    {
+        var order = new Order(Guid.NewGuid(), Guid.NewGuid(), OrderStatus.Confirmed);
+
+        var ex = Assert.Throws<QrFoodOrdering.Domain.Common.DomainException>(() => order.MarkPaid());
+
+        Assert.Equal(QrFoodOrdering.Domain.Common.DomainErrorCodes.OrderAlreadyConfirmed, ex.ErrorCode);
+    }
 }

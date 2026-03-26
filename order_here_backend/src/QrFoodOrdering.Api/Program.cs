@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.EntityFrameworkCore;
 // API Middleware
 using QrFoodOrdering.Api.Contracts.Common;
@@ -18,6 +19,12 @@ using QrFoodOrdering.Infrastructure;
 using QrFoodOrdering.Infrastructure.Persistence;
 
 var builder = WebApplication.CreateBuilder(args);
+var runtime = builder.Configuration
+    .GetSection(RuntimeEnvironmentOptions.SectionName)
+    .Get<RuntimeEnvironmentOptions>()
+    ?? new RuntimeEnvironmentOptions();
+var connectionString = builder.Configuration.GetConnectionString("Default");
+RuntimeEnvironmentValidator.Validate(builder.Environment, runtime, connectionString);
 
 // Controllers
 var controllers = builder.Services.AddControllers();
@@ -35,6 +42,13 @@ builder.Services.AddSwaggerGen(options =>
     options.OperationFilter<ApiErrorResponseExamplesOperationFilter>();
 });
 builder.Services.AddTransient<ExceptionHandlingMiddleware>();
+builder.Services.AddTransient<RequestLoggingMiddleware>();
+builder.Services.AddSingleton<IInFlightRequestGate, InFlightRequestGate>();
+builder.Services.AddHealthChecks().AddCheck<DatabaseHealthCheck>(
+    "database",
+    failureStatus: HealthStatus.Unhealthy,
+    tags: ["ready"]
+);
 
 // CORS (Frontend Dev)
 builder.Services.AddCors(options =>
@@ -87,16 +101,22 @@ var app = builder.Build();
 // 1) TraceId (first)
 app.UseMiddleware<TraceIdMiddleware>();
 
-// 2) Global exception handler
+// 2) Request logging with request metadata
+app.UseMiddleware<RequestLoggingMiddleware>();
+
+// 3) Global exception handler
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 
-// 3) JWT stub (placeholder)
+// 4) JWT stub (placeholder)
 app.UseMiddleware<JwtStubMiddleware>();
 
-// 4) CORS (must be before MapControllers)
-app.UseCors("FrontendDev");
+// 5) CORS (must be before MapControllers)
+if (runtime.EnableFrontendDevCors)
+{
+    app.UseCors("FrontendDev");
+}
 
-// 5) Ensure 404 from unmatched routes returns JSON error
+// 6) Ensure 404 from unmatched routes returns JSON error
 app.Use(
     async (context, next) =>
     {
@@ -126,18 +146,21 @@ app.Use(
 );
 
 // Endpoints
-app.UseSwagger();
-app.UseSwaggerUI();
+if (runtime.EnableSwagger)
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
 
 app.MapControllers();
 
-if (app.Environment.IsDevelopment())
+if (runtime.ApplyMigrationsOnStartup)
 {
     using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<QrFoodOrderingDbContext>();
     await db.Database.MigrateAsync();
 
-    if (!await db.MenuItems.AnyAsync())
+    if (runtime.SeedDemoDataOnStartup && !await db.MenuItems.AnyAsync())
     {
         db.MenuItems.AddRange(
             new MenuItem("M001", "Pad Thai", 60),

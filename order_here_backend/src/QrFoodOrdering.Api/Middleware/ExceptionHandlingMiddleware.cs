@@ -3,6 +3,7 @@ using System.Text.Json;
 using QrFoodOrdering.Api.Contracts.Common;
 using QrFoodOrdering.Application.Common.Errors;
 using QrFoodOrdering.Application.Common.Exceptions;
+using QrFoodOrdering.Application.Common.Validation;
 using QrFoodOrdering.Domain.Common;
 
 namespace QrFoodOrdering.Api.Middleware;
@@ -33,14 +34,46 @@ public sealed class ExceptionHandlingMiddleware : IMiddleware
 
         (HttpStatusCode status, string errorCode, string message) = ex switch
         {
+            ConfigurationValidationException e => (
+                HttpStatusCode.InternalServerError,
+                e.ErrorCode,
+                ResolvePublicMessage(e.ErrorCode, e.Message)
+            ),
+            ServiceUnavailableException e => (
+                HttpStatusCode.ServiceUnavailable,
+                e.ErrorCode,
+                ResolvePublicMessage(e.ErrorCode, e.Message)
+            ),
             InvalidRequestException e => (
                 MapInvalidRequestStatus(e.ErrorCode),
                 e.ErrorCode,
-                e.Message
+                ResolvePublicMessage(e.ErrorCode, e.Message)
             ),
-            ConflictException e => (HttpStatusCode.Conflict, e.ErrorCode, e.Message),
-            NotFoundException e => (HttpStatusCode.NotFound, e.ErrorCode, e.Message),
-            DomainException e => (MapDomainExceptionStatus(e.ErrorCode), e.ErrorCode, e.Message),
+            ConflictException e => (
+                HttpStatusCode.Conflict,
+                e.ErrorCode,
+                ResolvePublicMessage(e.ErrorCode, e.Message)
+            ),
+            ImmutableResourceException e => (
+                HttpStatusCode.Conflict,
+                e.ErrorCode,
+                ResolvePublicMessage(e.ErrorCode, e.Message)
+            ),
+            NotFoundException e => (
+                HttpStatusCode.NotFound,
+                e.ErrorCode,
+                ResolvePublicMessage(e.ErrorCode, e.Message)
+            ),
+            DomainException e => (
+                MapDomainExceptionStatus(e.ErrorCode),
+                e.ErrorCode,
+                ResolvePublicMessage(e.ErrorCode, e.Message)
+            ),
+            TimeoutException => (
+                HttpStatusCode.ServiceUnavailable,
+                ApplicationErrorCodes.OperationTimedOut,
+                RequestValidationMessages.OperationTimedOut
+            ),
 
             _ => (
                 HttpStatusCode.InternalServerError,
@@ -76,8 +109,44 @@ public sealed class ExceptionHandlingMiddleware : IMiddleware
             DomainErrorCodes.TableInactive => HttpStatusCode.Conflict,
             DomainErrorCodes.OrderNotOpen => HttpStatusCode.Conflict,
             DomainErrorCodes.OrderAlreadyCompleted => HttpStatusCode.Conflict,
+            DomainErrorCodes.OrderAlreadyCancelled => HttpStatusCode.Conflict,
+            DomainErrorCodes.OrderAlreadyConfirmed => HttpStatusCode.Conflict,
+            DomainErrorCodes.OrderItemsLocked => HttpStatusCode.Conflict,
+            DomainErrorCodes.OrderCannotBeCancelled => HttpStatusCode.Conflict,
+            DomainErrorCodes.OrderCannotBeConfirmed => HttpStatusCode.Conflict,
             DomainErrorCodes.CurrencyMismatch => HttpStatusCode.Conflict,
             _ => HttpStatusCode.BadRequest,
+        };
+    }
+
+    private static string ResolvePublicMessage(string errorCode, string fallbackMessage)
+    {
+        return errorCode switch
+        {
+            ApplicationErrorCodes.InvalidRequest => RequestValidationMessages.InvalidRequest,
+            ApplicationErrorCodes.ConfigurationInvalid => RequestValidationMessages.ConfigurationInvalid,
+            ApplicationErrorCodes.AuditLogImmutable => RequestValidationMessages.AuditLogImmutable,
+            ApplicationErrorCodes.OperationTimedOut => RequestValidationMessages.OperationTimedOut,
+            ApplicationErrorCodes.DatabaseUnavailable =>
+                RequestValidationMessages.DatabaseUnavailable,
+            ApplicationErrorCodes.IdempotencyKeyRequired =>
+                RequestValidationMessages.IdempotencyKeyRequired,
+            ApplicationErrorCodes.IdempotencyKeyPayloadMismatch =>
+                RequestValidationMessages.IdempotencyKeyPayloadMismatch,
+            ApplicationErrorCodes.ConcurrencyConflict =>
+                RequestValidationMessages.ConcurrencyConflict,
+            ApplicationErrorCodes.RequestBodyRequired =>
+                RequestValidationMessages.RequestBodyRequired,
+            ApplicationErrorCodes.InvalidJson => RequestValidationMessages.InvalidJson,
+            ApplicationErrorCodes.TableIdRequired => RequestValidationMessages.TableIdRequired,
+            ApplicationErrorCodes.TableIdInvalid => RequestValidationMessages.TableIdInvalid,
+            ApplicationErrorCodes.MenuItemIdInvalid => RequestValidationMessages.MenuItemIdInvalid,
+            ApplicationErrorCodes.MenuItemIdRequired => RequestValidationMessages.MenuItemIdRequired,
+            ApplicationErrorCodes.ProductNameRequired => RequestValidationMessages.ProductNameRequired,
+            ApplicationErrorCodes.InvalidQuantity =>
+                RequestValidationMessages.QuantityMustBeGreaterThanZero,
+            ApplicationErrorCodes.EmptyItems => RequestValidationMessages.EmptyItems,
+            _ => fallbackMessage
         };
     }
 }

@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using QrFoodOrdering.Api.Contracts.Common;
 using QrFoodOrdering.Api.Contracts.Orders;
+using QrFoodOrdering.Api.Infrastructure;
 using QrFoodOrdering.Application.Common.Errors;
 using QrFoodOrdering.Application.Orders.AddItem;
 using QrFoodOrdering.Application.Orders.CloseOrder;
@@ -21,13 +22,15 @@ public sealed class OrdersController : ControllerBase
     private readonly CreateOrderViaQrHandler _createOrderViaQrHandler;
     private readonly GetOrderHandler _getOrderHandler;
     private readonly CloseOrderHandler _closeOrderHandler;
+    private readonly IInFlightRequestGate _requestGate;
 
     public OrdersController(
         CreateOrderHandler createOrderHandler,
         AddItemHandler addItemHandler,
         CreateOrderViaQrHandler createOrderViaQrHandler,
         GetOrderHandler getOrderHandler,
-        CloseOrderHandler closeOrderHandler
+        CloseOrderHandler closeOrderHandler,
+        IInFlightRequestGate requestGate
     )
     {
         _createOrderHandler = createOrderHandler;
@@ -35,6 +38,7 @@ public sealed class OrdersController : ControllerBase
         _createOrderViaQrHandler = createOrderViaQrHandler;
         _getOrderHandler = getOrderHandler;
         _closeOrderHandler = closeOrderHandler;
+        _requestGate = requestGate;
     }
 
     [HttpPost]
@@ -49,8 +53,13 @@ public sealed class OrdersController : ControllerBase
         CancellationToken ct
     )
     {
-        var result = await _createOrderHandler.Handle(
-            new CreateOrderCommand(request.TableId, idempotencyKey),
+        var gateKey = string.IsNullOrWhiteSpace(idempotencyKey)
+            ? string.Empty
+            : $"orders:create:{idempotencyKey}";
+
+        var result = await _requestGate.ExecuteAsync(
+            gateKey,
+            token => _createOrderHandler.Handle(new CreateOrderCommand(request.TableId, idempotencyKey), token),
             ct
         );
 

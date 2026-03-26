@@ -6,8 +6,10 @@ on:
     branches: [ main ]
 
 jobs:
-  build-test:
+  backend-quality-gate:
+    name: Backend Quality Gate
     runs-on: ubuntu-latest
+    timeout-minutes: 20
 
     steps:
       - name: Checkout source
@@ -24,11 +26,50 @@ jobs:
       - name: Format
         run: dotnet format order_here_backend/QrFoodOrdering.sln --verify-no-changes
 
+      - name: Scan for hard-coded secrets
+        run: bash scripts/scan_no_hardcoded_secrets.sh
+
       - name: Build
         run: dotnet build order_here_backend/QrFoodOrdering.sln --no-restore --configuration Release
 
+  backend-unit-tests:
+    name: Backend Unit Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: backend-quality-gate
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Restore
+        run: dotnet restore order_here_backend/QrFoodOrdering.sln
+
       - name: Test UnitTests
-        run: dotnet test order_here_backend/tests/QrFoodOrdering.UnitTests/QrFoodOrdering.UnitTests.csproj --no-build --configuration Release
+        run: dotnet test order_here_backend/tests/QrFoodOrdering.UnitTests/QrFoodOrdering.UnitTests.csproj --no-restore --configuration Release
+
+  backend-integration-tests:
+    name: Backend Integration Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: backend-quality-gate
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Restore
+        run: dotnet restore order_here_backend/QrFoodOrdering.sln
 
       - name: Test IntegrationTests
-        run: dotnet test order_here_backend/tests/QrFoodOrdering.IntegrationTests/QrFoodOrdering.IntegrationTests.csproj --no-build --configuration Release
+        run: dotnet test order_here_backend/tests/QrFoodOrdering.IntegrationTests/QrFoodOrdering.IntegrationTests.csproj --no-restore --configuration Release

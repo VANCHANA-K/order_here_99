@@ -3,6 +3,14 @@ namespace QrFoodOrdering.Application.Common.Errors;
 public static class ApplicationErrorCodes
 {
     public const string InvalidRequest = "INVALID_REQUEST";
+    public const string ConfigurationInvalid = "CONFIGURATION_INVALID";
+    public const string AuditLogImmutable = "AUDIT_LOG_IMMUTABLE";
+    public const string OperationTimedOut = "OPERATION_TIMED_OUT";
+    public const string DatabaseUnavailable = "DATABASE_UNAVAILABLE";
+    public const string IdempotencyKeyRequired = "IDEMPOTENCY_KEY_REQUIRED";
+    public const string IdempotencyKeyConflict = "IDEMPOTENCY_KEY_CONFLICT";
+    public const string IdempotencyKeyPayloadMismatch = "IDEMPOTENCY_KEY_PAYLOAD_MISMATCH";
+    public const string ConcurrencyConflict = "CONCURRENCY_CONFLICT";
     public const string RequestBodyRequired = "REQUEST_BODY_REQUIRED";
     public const string InvalidJson = "INVALID_JSON";
 

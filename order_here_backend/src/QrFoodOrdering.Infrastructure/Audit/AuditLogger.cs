@@ -18,8 +18,9 @@ public sealed class AuditLogger : IAuditLogger
 
     public Task LogAsync(string eventType, string entityType, Guid entityId, object data, CancellationToken ct)
     {
-        var detail = JsonSerializer.Serialize(new { traceId = _trace.TraceId, entityId, data });
-        var log = new AuditLog(eventType, entityType, entityId, detail);
+        var traceId = TraceIdPolicy.Resolve(_trace.TraceId, "audit-writer");
+        var detail = JsonSerializer.Serialize(new { traceId, entityId, data });
+        var log = new AuditLog(eventType, entityType, entityId, detail, traceId);
         return _writer.WriteAsync(log);
     }
 }

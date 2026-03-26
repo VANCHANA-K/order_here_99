@@ -9,6 +9,7 @@ public class Order
     public Guid Id { get; }
     public Guid TableId { get; private set; }
     public OrderStatus Status { get; private set; }
+    public long RowVersion { get; private set; }
     public DateTime CreatedAtUtc { get; private set; }
     public IReadOnlyCollection<OrderItem> Items => _items.AsReadOnly();
 
@@ -33,9 +34,7 @@ public class Order
     }
 
     public Order(Guid id, Guid tableId, DateTime? createdAtUtc = null)
-        : this(id, tableId, OrderStatus.Pending, createdAtUtc)
-    {
-    }
+        : this(id, tableId, OrderStatus.Pending, createdAtUtc) { }
 
     public Order(Guid id, Guid tableId, OrderStatus status, DateTime? createdAtUtc = null)
     {
@@ -53,7 +52,7 @@ public class Order
 
     public void AddItem(OrderItem item)
     {
-        EnsureOrderIsOpen(); // R1
+        EnsureItemsEditable();
         _items.Add(
             item ?? throw new DomainException(DomainErrorCodes.ItemRequired, "Item is required")
         );
@@ -73,14 +72,51 @@ public class Order
                 "Cannot cancel a completed order"
             );
 
+        if (Status == OrderStatus.Cancelled)
+            throw new DomainException(
+                DomainErrorCodes.OrderAlreadyCancelled,
+                "Order is already cancelled"
+            );
+
+        if (Status is OrderStatus.Cooking or OrderStatus.Ready or OrderStatus.Served)
+            throw new DomainException(
+                DomainErrorCodes.OrderCannotBeCancelled,
+                "Cannot cancel an order after preparation has started"
+            );
+
         Status = OrderStatus.Cancelled;
     }
 
     // เตรียมไว้รองรับ flow ในอนาคต
     public void MarkPaid()
     {
-        EnsureOrderIsOpen();
+        if (Status == OrderStatus.Confirmed)
+            throw new DomainException(
+                DomainErrorCodes.OrderAlreadyConfirmed,
+                "Order is already confirmed"
+            );
+
+        if (Status != OrderStatus.Pending)
+            throw new DomainException(
+                DomainErrorCodes.OrderCannotBeConfirmed,
+                "Only pending orders can be confirmed"
+            );
+
         Status = OrderStatus.Confirmed;
+    }
+
+    private void EnsureItemsEditable()
+    {
+        if (Status is OrderStatus.Pending or OrderStatus.Confirmed)
+            return;
+
+        if (Status is OrderStatus.Completed or OrderStatus.Cancelled)
+            throw new DomainException(DomainErrorCodes.OrderNotOpen, "Order is not open");
+
+        throw new DomainException(
+            DomainErrorCodes.OrderItemsLocked,
+            "Cannot modify items after preparation has started"
+        );
     }
 
     private void EnsureOrderIsOpen()
