@@ -10,5 +10,11 @@ internal sealed class OpenApiCommonExamples : IOpenApiExampleCatalog
         {
             [OpenApiExampleKey.Get(OpenApiRoutePaths.Health, StatusCodes.Status200OK)] =
                 OpenApiExampleRegistry.Object(("status", "ok")),
+            [OpenApiExampleKey.Get(OpenApiRoutePaths.HealthLive, StatusCodes.Status200OK)] =
+                OpenApiExampleRegistry.Object(("status", "ok")),
+            [OpenApiExampleKey.Get(OpenApiRoutePaths.HealthReady, StatusCodes.Status200OK)] =
+                OpenApiExampleRegistry.Object(("status", "ok")),
+            [OpenApiExampleKey.Get(OpenApiRoutePaths.HealthReady, StatusCodes.Status503ServiceUnavailable)] =
+                OpenApiExampleRegistry.Error("SERVICE_UNAVAILABLE", "Service is not ready."),
         };
 }

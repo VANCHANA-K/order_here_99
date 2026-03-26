@@ -88,6 +88,28 @@ public sealed class CreateOrderViaQrHandler
         {
             return await CreateOrderAsync(cmd, key, ct);
         }
+        catch (ConflictException ex) when (ex.ErrorCode == ApplicationErrorCodes.IdempotencyKeyConflict)
+        {
+            var existing = await _idempotency.TryGetAsync(key, ct);
+            if (existing.Found)
+            {
+                EnsureMatchingRequestHash(existing, requestHash: ComputeRequestHash(cmd));
+
+                var existingOrder = await _orders.GetByIdAsync(existing.OrderId, ct);
+                if (existingOrder is not null)
+                {
+                    return new CreateOrderViaQrResult(
+                        existingOrder.Id,
+                        existingOrder.Status,
+                        existingOrder.CreatedAtUtc
+                    );
+                }
+
+                return new CreateOrderViaQrResult(existing.OrderId, OrderStatus.Pending, DateTime.UtcNow);
+            }
+
+            throw;
+        }
         finally
         {
             gate.Release();
@@ -100,12 +122,15 @@ public sealed class CreateOrderViaQrHandler
         CancellationToken ct
     )
     {
+        var requestHash = ComputeRequestHash(cmd);
+
         // 3) Optional idempotency short-circuit
         if (!string.IsNullOrWhiteSpace(key))
         {
             var existing = await _idempotency.TryGetAsync(key, ct);
             if (existing.Found)
             {
+                EnsureMatchingRequestHash(existing, requestHash);
                 var existingOrder = await _orders.GetByIdAsync(existing.OrderId, ct);
                 if (existingOrder is not null)
                 {
@@ -174,14 +199,33 @@ public sealed class CreateOrderViaQrHandler
 
         await _audit.LogAsync(AuditEvents.OrderPlacedViaQr, AuditEntities.Order, order.Id, auditMetadata);
 
-        await _uow.SaveChangesAsync(ct);
-
         if (!string.IsNullOrWhiteSpace(key))
-            await _idempotency.MarkAsync(key, order.Id, ct);
+            await _idempotency.MarkAsync(key, requestHash, order.Id, ct);
+
+        await _uow.SaveChangesAsync(ct);
 
         return new CreateOrderViaQrResult(order.Id, order.Status, order.CreatedAtUtc);
     }
 
     private static string NormalizeIdempotencyKey(string? key) =>
         string.IsNullOrWhiteSpace(key) ? string.Empty : $"orders:create-via-qr:{key}";
+
+    private static string ComputeRequestHash(CreateOrderViaQrCommand cmd)
+    {
+        var canonicalParts = new[] { cmd.TableId.ToString("D") }.Concat(
+            cmd.Items.Select(x => FormattableString.Invariant($"{x.MenuItemId:D}:{x.Quantity}"))
+        );
+        var canonical = string.Join("|", canonicalParts);
+
+        return IdempotencyRequestHasher.Compute(canonical);
+    }
+
+    private static void EnsureMatchingRequestHash(IdempotencyResult existing, string requestHash)
+    {
+        if (!string.Equals(existing.RequestHash, requestHash, StringComparison.Ordinal))
+            throw new ConflictException(
+                ApplicationErrorCodes.IdempotencyKeyPayloadMismatch,
+                RequestValidationMessages.IdempotencyKeyPayloadMismatch
+            );
+    }
 }

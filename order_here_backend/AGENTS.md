@@ -53,7 +53,13 @@
 ## Security & Configuration Tips
 - Do not commit secrets; prefer env vars or User Secrets. SQLite files and logs are gitignored.
 - Environments: set `ASPNETCORE_ENVIRONMENT` (`Development`, `Test`, `Production`).
-- Default dev DB: SQLite via `ConnectionStrings:Default` in `appsettings.Development.json`.
+- Runtime behavior is controlled by `Runtime` in `src/QrFoodOrdering.Api/appsettings.*.json`:
+  - `Development`: Swagger/CORS/migrate/seed enabled
+  - `Test`: Swagger enabled, migrate/seed disabled
+  - `Production`: Swagger/CORS/migrate/seed disabled
+- Development can use `dotnet user-secrets` for local secret overrides.
+- Production must provide `ConnectionStrings__Default` via environment variable or secret store; do not add production secrets to `appsettings.*.json`.
+- Default dev DB fallback remains in `appsettings.Development.json` for local SQLite only.
 
 ## Architecture Overview
 - Clean Architecture: API → Application → Domain; Infrastructure referenced by Application for implementations.

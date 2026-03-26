@@ -36,6 +36,7 @@ Fields:
 - Use `SCREAMING_SNAKE_CASE`
 - Prefer specific resource and action codes over generic ones
 - Keep the same `errorCode` whether validation fails in model binding or handler logic
+- Standard source of truth: `src/QrFoodOrdering.Application/Common/Errors/ErrorCodeCatalog.cs`
 - Reserved generic fallback codes:
   - `INVALID_REQUEST`
   - `ENDPOINT_NOT_FOUND`

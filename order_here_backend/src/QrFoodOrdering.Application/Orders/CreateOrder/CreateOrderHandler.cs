@@ -1,9 +1,11 @@
 using Microsoft.Extensions.Logging;
 using QrFoodOrdering.Application.Abstractions;
+using QrFoodOrdering.Application.Common.Audit;
 using QrFoodOrdering.Application.Common.Errors;
 using QrFoodOrdering.Application.Common.Exceptions;
 using QrFoodOrdering.Application.Common.Idempotency;
 using QrFoodOrdering.Application.Common.Observability;
+using QrFoodOrdering.Application.Common.Validation;
 using QrFoodOrdering.Application.Tables;
 using QrFoodOrdering.Domain.Orders;
 
@@ -15,6 +17,7 @@ public sealed class CreateOrderHandler
     private readonly ITablesRepository _tablesRepository;
     private readonly IIdempotencyStore _idempotency;
     private readonly IUnitOfWork _uow;
+    private readonly IAuditService _audit;
     private readonly ILogger<CreateOrderHandler> _logger;
     private readonly ITraceContext _trace;
 
@@ -23,6 +26,7 @@ public sealed class CreateOrderHandler
         ITablesRepository tablesRepository,
         IIdempotencyStore idempotency,
         IUnitOfWork uow,
+        IAuditService audit,
         ILogger<CreateOrderHandler> logger,
         ITraceContext trace
     )
@@ -31,15 +35,21 @@ public sealed class CreateOrderHandler
         _tablesRepository = tablesRepository;
         _idempotency = idempotency;
         _uow = uow;
+        _audit = audit;
         _logger = logger;
         _trace = trace;
     }
 
     public async Task<CreateOrderResult> Handle(CreateOrderCommand command, CancellationToken ct)
     {
-        var key = string.IsNullOrWhiteSpace(command.IdempotencyKey)
-            ? string.Empty
-            : $"orders:create:{command.IdempotencyKey}";
+        if (string.IsNullOrWhiteSpace(command.IdempotencyKey))
+            throw new InvalidRequestException(
+                ApplicationErrorCodes.IdempotencyKeyRequired,
+                RequestValidationMessages.IdempotencyKeyRequired
+            );
+
+        var key = $"orders:create:{command.IdempotencyKey}";
+        var requestHash = IdempotencyRequestHasher.Compute(command.TableId.ToString("D"));
 
         _logger.LogInformation(
             "CreateOrderStarted {@data}",
@@ -52,6 +62,7 @@ public sealed class CreateOrderHandler
             var existing = await _idempotency.TryGetAsync(key, ct);
             if (existing.Found)
             {
+                EnsureMatchingRequestHash(existing, requestHash);
                 _logger.LogInformation(
                     "CreateOrderIdempotentHit {@data}",
                     new
@@ -71,6 +82,7 @@ public sealed class CreateOrderHandler
             existing = await _idempotency.TryGetAsync(key, ct);
             if (existing.Found)
             {
+                EnsureMatchingRequestHash(existing, requestHash);
                 await _uow.CommitAsync(ct);
                 return new CreateOrderResult(existing.OrderId);
             }
@@ -92,10 +104,14 @@ public sealed class CreateOrderHandler
             var order = new Order(Guid.NewGuid(), command.TableId);
 
             await _repository.AddAsync(order, ct);
+            await _audit.LogAsync(
+                AuditEvents.OrderCreated,
+                AuditEntities.Order,
+                order.Id,
+                $"tableId={command.TableId:D};traceId={_trace.TraceId}"
+            );
+            await _idempotency.MarkAsync(key, requestHash, order.Id, ct);
             await _uow.SaveChangesAsync(ct);
-
-            // 4) Mark idempotency after successful save
-            await _idempotency.MarkAsync(key, order.Id, ct);
 
             await _uow.CommitAsync(ct);
 
@@ -112,6 +128,17 @@ public sealed class CreateOrderHandler
 
             return new CreateOrderResult(order.Id);
         }
+        catch (ConflictException ex) when (ex.ErrorCode == ApplicationErrorCodes.IdempotencyKeyConflict)
+        {
+            var existing = await _idempotency.TryGetAsync(key, ct);
+            if (existing.Found)
+            {
+                EnsureMatchingRequestHash(existing, requestHash);
+                return new CreateOrderResult(existing.OrderId);
+            }
+
+            throw;
+        }
         catch
         {
             _logger.LogWarning(
@@ -125,5 +152,14 @@ public sealed class CreateOrderHandler
             );
             throw;
         }
+    }
+
+    private static void EnsureMatchingRequestHash(IdempotencyResult existing, string requestHash)
+    {
+        if (!string.Equals(existing.RequestHash, requestHash, StringComparison.Ordinal))
+            throw new ConflictException(
+                ApplicationErrorCodes.IdempotencyKeyPayloadMismatch,
+                RequestValidationMessages.IdempotencyKeyPayloadMismatch
+            );
     }
 }

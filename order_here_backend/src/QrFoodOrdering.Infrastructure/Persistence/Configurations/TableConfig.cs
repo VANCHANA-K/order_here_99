@@ -16,5 +16,6 @@ public sealed class TableConfig : IEntityTypeConfiguration<Table>
         b.HasIndex(x => x.Code).IsUnique();
 
         b.Property(x => x.IsActive).IsRequired();
+        b.Property(x => x.RowVersion).IsConcurrencyToken().HasDefaultValue(1L);
     }
 }

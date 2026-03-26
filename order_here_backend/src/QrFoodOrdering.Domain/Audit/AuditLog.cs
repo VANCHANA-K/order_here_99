@@ -10,18 +10,26 @@ public class AuditLog
 
     public Guid EntityId { get; private set; }
 
+    public string TraceId { get; private set; } = default!;
+
     public string? Metadata { get; private set; }
 
     public DateTime CreatedAtUtc { get; private set; }
 
     private AuditLog() { }
 
-    public AuditLog(string eventType, string entityType, Guid entityId, string? metadata = null)
+    public AuditLog(
+        string eventType,
+        string entityType,
+        Guid entityId,
+        string? metadata = null,
+        string? traceId = null)
     {
         Id = Guid.NewGuid();
         EventType = eventType;
         EntityType = entityType;
         EntityId = entityId;
+        TraceId = string.IsNullOrWhiteSpace(traceId) ? "unknown" : traceId;
         Metadata = metadata;
         CreatedAtUtc = DateTime.UtcNow;
     }

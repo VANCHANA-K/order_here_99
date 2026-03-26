@@ -38,7 +38,7 @@ public sealed class TestApiFactory : WebApplicationFactory<Program>, IAsyncLifet
 
             using var scope = services.BuildServiceProvider().CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<QrFoodOrderingDbContext>();
-            db.Database.EnsureCreated();
+            db.Database.Migrate();
         });
     }
 

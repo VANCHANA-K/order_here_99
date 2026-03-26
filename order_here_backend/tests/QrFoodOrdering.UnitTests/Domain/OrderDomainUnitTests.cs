@@ -40,6 +40,17 @@ public class OrderDomainUnitTests
     }
 
     [Fact]
+    public void AddItem_after_cooking_should_throw_items_locked()
+    {
+        var order = new Order(Guid.NewGuid(), Guid.NewGuid(), OrderStatus.Cooking);
+
+        var item = new OrderItem(Guid.NewGuid(), "Pad Thai", 1, new Money(60));
+
+        var ex = Assert.Throws<DomainException>(() => order.AddItem(item));
+        Assert.Equal(DomainErrorCodes.OrderItemsLocked, ex.ErrorCode);
+    }
+
+    [Fact]
     public void Cancel_after_completed_should_throw()
     {
         var order = new Order(Guid.NewGuid(), Guid.NewGuid());
@@ -48,6 +59,34 @@ public class OrderDomainUnitTests
         var ex = Assert.Throws<DomainException>(() => order.Cancel());
         Assert.Equal(DomainErrorCodes.OrderAlreadyCompleted, ex.ErrorCode);
         Assert.Contains("completed", ex.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void Cancel_after_cancelled_should_throw()
+    {
+        var order = new Order(Guid.NewGuid(), Guid.NewGuid());
+        order.Cancel();
+
+        var ex = Assert.Throws<DomainException>(() => order.Cancel());
+        Assert.Equal(DomainErrorCodes.OrderAlreadyCancelled, ex.ErrorCode);
+    }
+
+    [Fact]
+    public void Cancel_after_cooking_should_throw()
+    {
+        var order = new Order(Guid.NewGuid(), Guid.NewGuid(), OrderStatus.Cooking);
+
+        var ex = Assert.Throws<DomainException>(() => order.Cancel());
+        Assert.Equal(DomainErrorCodes.OrderCannotBeCancelled, ex.ErrorCode);
+    }
+
+    [Fact]
+    public void MarkPaid_after_ready_should_throw()
+    {
+        var order = new Order(Guid.NewGuid(), Guid.NewGuid(), OrderStatus.Ready);
+
+        var ex = Assert.Throws<DomainException>(() => order.MarkPaid());
+        Assert.Equal(DomainErrorCodes.OrderCannotBeConfirmed, ex.ErrorCode);
     }
 
     [Fact]

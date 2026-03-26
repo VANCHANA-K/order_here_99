@@ -6,7 +6,12 @@ public static class DomainErrorCodes
     public const string TableIdRequired = "TABLE_ID_REQUIRED";
     public const string ItemRequired = "ITEM_REQUIRED";
     public const string OrderAlreadyCompleted = "ORDER_ALREADY_COMPLETED";
+    public const string OrderAlreadyCancelled = "ORDER_ALREADY_CANCELLED";
+    public const string OrderAlreadyConfirmed = "ORDER_ALREADY_CONFIRMED";
     public const string OrderNotOpen = "ORDER_NOT_OPEN";
+    public const string OrderItemsLocked = "ORDER_ITEMS_LOCKED";
+    public const string OrderCannotBeCancelled = "ORDER_CANNOT_BE_CANCELLED";
+    public const string OrderCannotBeConfirmed = "ORDER_CANNOT_BE_CONFIRMED";
 
     public const string OrderItemIdRequired = "ORDER_ITEM_ID_REQUIRED";
     public const string ProductNameRequired = "PRODUCT_NAME_REQUIRED";

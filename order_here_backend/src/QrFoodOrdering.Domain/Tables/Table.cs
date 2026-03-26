@@ -5,6 +5,7 @@ namespace QrFoodOrdering.Domain.Tables;
 public sealed class Table
 {
     public Guid Id { get; private set; }
+    public long RowVersion { get; private set; }
 
     public string Code { get; private set; } = default!;
 

@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging;
 using QrFoodOrdering.Application.Abstractions;
+using QrFoodOrdering.Application.Common.Audit;
 using QrFoodOrdering.Application.Common.Errors;
 using QrFoodOrdering.Application.Common.Exceptions;
 using QrFoodOrdering.Application.Common.Idempotency;
@@ -16,6 +17,7 @@ public sealed class AddItemHandler
     private readonly IIdempotencyStore _idempotency;
     private readonly IRetryPolicy _retry;
     private readonly IUnitOfWork _uow;
+    private readonly IAuditService _audit;
     private readonly ITraceContext _trace;
     private readonly ILogger<AddItemHandler> _logger;
 
@@ -24,6 +26,7 @@ public sealed class AddItemHandler
         IIdempotencyStore idempotency,
         IRetryPolicy retry,
         IUnitOfWork uow,
+        IAuditService audit,
         ITraceContext trace,
         ILogger<AddItemHandler> logger
     )
@@ -32,6 +35,7 @@ public sealed class AddItemHandler
         _idempotency = idempotency;
         _retry = retry;
         _uow = uow;
+        _audit = audit;
         _trace = trace;
         _logger = logger;
     }
@@ -76,6 +80,7 @@ public sealed class AddItemHandler
         if (!hasKey)
         {
             await ExecuteOnce(command, ct);
+            await _uow.SaveChangesAsync(ct);
             _logger.LogInformation(
                 "AddItemSucceeded {@data}",
                 new
@@ -91,10 +96,16 @@ public sealed class AddItemHandler
         }
 
         var key = $"orders:{command.OrderId}:add-item:{command.IdempotencyKey}";
+        var requestHash = IdempotencyRequestHasher.Compute(
+            FormattableString.Invariant(
+                $"{command.OrderId:D}|{command.ProductName.Trim()}|{command.Quantity}|{command.UnitPrice}"
+            )
+        );
 
         var existing = await _idempotency.TryGetAsync(key, ct);
         if (existing.Found)
         {
+            EnsureMatchingRequestHash(existing, requestHash);
             _logger.LogInformation(
                 "AddItemIdempotentHit {@data}",
                 new
@@ -115,12 +126,11 @@ public sealed class AddItemHandler
                 async token =>
                 {
                     await ExecuteOnce(command, token);
+                    await _idempotency.MarkAsync(key, requestHash, command.OrderId, token);
+                    await _uow.SaveChangesAsync(token);
                 },
                 ct
             );
-
-            // 5) Mark idempotent after success only
-            await _idempotency.MarkAsync(key, command.OrderId, ct);
 
             _logger.LogInformation(
                 "AddItemSucceeded {@data}",
@@ -132,6 +142,17 @@ public sealed class AddItemHandler
                     Status = LogStatuses.Success,
                 }
             );
+        }
+        catch (ConflictException ex) when (ex.ErrorCode == ApplicationErrorCodes.IdempotencyKeyConflict)
+        {
+            var persisted = await _idempotency.TryGetAsync(key, ct);
+            if (persisted.Found)
+            {
+                EnsureMatchingRequestHash(persisted, requestHash);
+                return;
+            }
+
+            throw;
         }
         catch (Exception ex)
         {
@@ -171,6 +192,20 @@ public sealed class AddItemHandler
         order.AddItem(item);
 
         await _repo.UpdateAsync(order, ct);
-        await _uow.SaveChangesAsync(ct);
+        await _audit.LogAsync(
+            AuditEvents.OrderItemAdded,
+            AuditEntities.Order,
+            order.Id,
+            $"productName={command.ProductName.Trim()};quantity={command.Quantity};traceId={_trace.TraceId}"
+        );
+    }
+
+    private static void EnsureMatchingRequestHash(IdempotencyResult existing, string requestHash)
+    {
+        if (!string.Equals(existing.RequestHash, requestHash, StringComparison.Ordinal))
+            throw new ConflictException(
+                ApplicationErrorCodes.IdempotencyKeyPayloadMismatch,
+                RequestValidationMessages.IdempotencyKeyPayloadMismatch
+            );
     }
 }

@@ -3,6 +3,8 @@ namespace QrFoodOrdering.Api.Swagger;
 internal static class OpenApiRoutePaths
 {
     public const string Health = "/health";
+    public const string HealthLive = "/health/live";
+    public const string HealthReady = "/health/ready";
 
     public const string Orders = "/api/v1/orders";
     public const string OrderById = "/api/v1/orders/{id}";

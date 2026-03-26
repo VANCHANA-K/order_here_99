@@ -1,7 +1,9 @@
 using Microsoft.Extensions.Logging.Abstractions;
 using QrFoodOrdering.Application.Abstractions;
+using QrFoodOrdering.Application.Common.Audit;
 using QrFoodOrdering.Application.Common.Idempotency;
 using QrFoodOrdering.Application.Common.Observability;
+using QrFoodOrdering.Application.Common.Validation;
 using QrFoodOrdering.Application.Orders.CreateOrder;
 using QrFoodOrdering.Application.Tables;
 using QrFoodOrdering.Domain.Orders;
@@ -40,21 +42,21 @@ public class CreateOrderHandlerUnitTests
 
     private sealed class InMemoryIdempotencyStore : IIdempotencyStore
     {
-        private readonly Dictionary<string, Guid> _store = new();
+        private readonly Dictionary<string, IdempotencyResult> _store = new();
 
-        public Task<(bool Found, Guid OrderId)> TryGetAsync(string key, CancellationToken ct)
+        public Task<IdempotencyResult> TryGetAsync(string key, CancellationToken ct)
         {
             if (string.IsNullOrWhiteSpace(key))
-                return Task.FromResult((false, Guid.Empty));
+                return Task.FromResult(new IdempotencyResult(false, string.Empty, Guid.Empty));
 
-            var found = _store.TryGetValue(key, out var orderId);
-            return Task.FromResult((found, orderId));
+            var found = _store.TryGetValue(key, out var value);
+            return Task.FromResult(found ? value : new IdempotencyResult(false, string.Empty, Guid.Empty));
         }
 
-        public Task MarkAsync(string key, Guid orderId, CancellationToken ct)
+        public Task MarkAsync(string key, string requestHash, Guid orderId, CancellationToken ct)
         {
             if (!string.IsNullOrWhiteSpace(key))
-                _store[key] = orderId;
+                _store[key] = new IdempotencyResult(true, requestHash, orderId);
 
             return Task.CompletedTask;
         }
@@ -111,6 +113,17 @@ public class CreateOrderHandlerUnitTests
         public string TraceId { get; } = "trace-test";
     }
 
+    private sealed class FakeAuditService : IAuditService
+    {
+        public readonly List<(string EventType, string EntityType, Guid EntityId, string? Metadata)> Entries = new();
+
+        public Task LogAsync(string eventType, string entityType, Guid entityId, string? metadata = null)
+        {
+            Entries.Add((eventType, entityType, entityId, metadata));
+            return Task.CompletedTask;
+        }
+    }
+
     [Fact]
     public async Task Create_order_should_save_once_and_commit()
     {
@@ -118,6 +131,7 @@ public class CreateOrderHandlerUnitTests
         var tables = new InMemoryTablesRepository();
         var store = new InMemoryIdempotencyStore();
         var uow = new FakeUnitOfWork();
+        var audit = new FakeAuditService();
         var table = new Table("A01");
         await tables.AddAsync(table, CancellationToken.None);
         var handler = new CreateOrderHandler(
@@ -125,6 +139,7 @@ public class CreateOrderHandlerUnitTests
             tables,
             store,
             uow,
+            audit,
             NullLogger<CreateOrderHandler>.Instance,
             new StubTraceContext()
         );
@@ -138,6 +153,7 @@ public class CreateOrderHandlerUnitTests
         Assert.Equal(1, repo.AddCalls);
         Assert.Equal(1, uow.SaveChangesCalls);
         Assert.Equal(1, uow.CommitCalls);
+        Assert.Contains(audit.Entries, x => x.EventType == AuditEvents.OrderCreated && x.EntityId == result.OrderId);
     }
 
     [Fact]
@@ -147,18 +163,20 @@ public class CreateOrderHandlerUnitTests
         var tables = new InMemoryTablesRepository();
         var store = new InMemoryIdempotencyStore();
         var uow = new FakeUnitOfWork();
+        var audit = new FakeAuditService();
         var existingOrderId = Guid.NewGuid();
         var table = new Table("A02");
 
         await tables.AddAsync(table, CancellationToken.None);
 
-        await store.MarkAsync("abc", existingOrderId, CancellationToken.None);
+        await store.MarkAsync("abc", "legacy-hash", existingOrderId, CancellationToken.None);
 
         var handler = new CreateOrderHandler(
             repo,
             tables,
             store,
             uow,
+            audit,
             NullLogger<CreateOrderHandler>.Instance,
             new StubTraceContext()
         );
@@ -174,17 +192,83 @@ public class CreateOrderHandlerUnitTests
     }
 
     [Fact]
+    public async Task Create_order_with_same_key_and_different_payload_should_throw_conflict()
+    {
+        var repo = new InMemoryOrderRepository();
+        var tables = new InMemoryTablesRepository();
+        var store = new InMemoryIdempotencyStore();
+        var uow = new FakeUnitOfWork();
+        var audit = new FakeAuditService();
+        var tableA = new Table("A10");
+        var tableB = new Table("A11");
+        await tables.AddAsync(tableA, CancellationToken.None);
+        await tables.AddAsync(tableB, CancellationToken.None);
+
+        var handler = new CreateOrderHandler(
+            repo,
+            tables,
+            store,
+            uow,
+            audit,
+            NullLogger<CreateOrderHandler>.Instance,
+            new StubTraceContext()
+        );
+
+        var first = await handler.Handle(new CreateOrderCommand(tableA.Id, "dup-key"), CancellationToken.None);
+
+        var ex = await Assert.ThrowsAsync<ConflictException>(() =>
+            handler.Handle(new CreateOrderCommand(tableB.Id, "dup-key"), CancellationToken.None)
+        );
+
+        Assert.Equal(ApplicationErrorCodes.IdempotencyKeyPayloadMismatch, ex.ErrorCode);
+        Assert.True(repo.Store.ContainsKey(first.OrderId));
+        Assert.Equal(1, repo.AddCalls);
+    }
+
+    [Fact]
+    public async Task Create_order_without_idempotency_key_should_throw_invalid_request()
+    {
+        var repo = new InMemoryOrderRepository();
+        var tables = new InMemoryTablesRepository();
+        var store = new InMemoryIdempotencyStore();
+        var uow = new FakeUnitOfWork();
+        var audit = new FakeAuditService();
+        var table = new Table("A01");
+        await tables.AddAsync(table, CancellationToken.None);
+        var handler = new CreateOrderHandler(
+            repo,
+            tables,
+            store,
+            uow,
+            audit,
+            NullLogger<CreateOrderHandler>.Instance,
+            new StubTraceContext()
+        );
+
+        var ex = await Assert.ThrowsAsync<InvalidRequestException>(() =>
+            handler.Handle(new CreateOrderCommand(table.Id, null), CancellationToken.None)
+        );
+
+        Assert.Equal(ApplicationErrorCodes.IdempotencyKeyRequired, ex.ErrorCode);
+        Assert.Equal(RequestValidationMessages.IdempotencyKeyRequired, ex.Message);
+        Assert.Equal(0, repo.AddCalls);
+        Assert.Equal(0, uow.SaveChangesCalls);
+    }
+
+    [Fact]
     public async Task Create_order_with_unknown_table_should_throw_not_found()
     {
         var repo = new InMemoryOrderRepository();
         var tables = new InMemoryTablesRepository();
         var store = new InMemoryIdempotencyStore();
         var uow = new FakeUnitOfWork();
+        var audit = new FakeAuditService();
         var handler = new CreateOrderHandler(
             repo,
             tables,
             store,
             uow,
+            audit,
             NullLogger<CreateOrderHandler>.Instance,
             new StubTraceContext()
         );
@@ -204,6 +288,7 @@ public class CreateOrderHandlerUnitTests
         var tables = new InMemoryTablesRepository();
         var store = new InMemoryIdempotencyStore();
         var uow = new FakeUnitOfWork();
+        var audit = new FakeAuditService();
         var table = new Table("A03");
         table.Deactivate();
         await tables.AddAsync(table, CancellationToken.None);
@@ -213,6 +298,7 @@ public class CreateOrderHandlerUnitTests
             tables,
             store,
             uow,
+            audit,
             NullLogger<CreateOrderHandler>.Instance,
             new StubTraceContext()
         );

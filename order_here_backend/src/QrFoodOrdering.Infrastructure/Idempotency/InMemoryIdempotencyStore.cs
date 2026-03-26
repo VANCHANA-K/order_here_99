@@ -5,22 +5,21 @@ namespace QrFoodOrdering.Infrastructure.Idempotency;
 
 public sealed class InMemoryIdempotencyStore : IIdempotencyStore
 {
-    private readonly ConcurrentDictionary<string, Guid> _map = new();
+    private readonly ConcurrentDictionary<string, IdempotencyResult> _map = new();
 
-    public Task<(bool Found, Guid OrderId)> TryGetAsync(string key, CancellationToken ct)
+    public Task<IdempotencyResult> TryGetAsync(string key, CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(key))
-            return Task.FromResult((false, Guid.Empty));
+            return Task.FromResult(new IdempotencyResult(false, string.Empty, Guid.Empty));
 
-        var found = _map.TryGetValue(key, out var id);
-        return Task.FromResult((found, id));
+        var found = _map.TryGetValue(key, out var value);
+        return Task.FromResult(found ? value : new IdempotencyResult(false, string.Empty, Guid.Empty));
     }
 
-    public Task MarkAsync(string key, Guid orderId, CancellationToken ct)
+    public Task MarkAsync(string key, string requestHash, Guid orderId, CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(key)) return Task.CompletedTask;
-        _map[key] = orderId;
+        _map[key] = new IdempotencyResult(true, requestHash, orderId);
         return Task.CompletedTask;
     }
 }
-

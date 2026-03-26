@@ -93,6 +93,40 @@ public sealed class SwaggerApiIntegrationTests
 
         Assert.Equal("ok", healthSuccessExample.GetProperty("status").GetString());
 
+        var healthLiveSuccessExample = root
+            .GetProperty("paths")
+            .GetProperty("/health/live")
+            .GetProperty("get")
+            .GetProperty("responses")
+            .GetProperty("200")
+            .GetProperty("content")
+            .GetProperty("application/json")
+            .GetProperty("example");
+
+        Assert.Equal("ok", healthLiveSuccessExample.GetProperty("status").GetString());
+
+        var healthReadyResponses = root
+            .GetProperty("paths")
+            .GetProperty("/health/ready")
+            .GetProperty("get")
+            .GetProperty("responses");
+
+        var healthReadySuccessExample = healthReadyResponses
+            .GetProperty("200")
+            .GetProperty("content")
+            .GetProperty("application/json")
+            .GetProperty("example");
+
+        Assert.Equal("ok", healthReadySuccessExample.GetProperty("status").GetString());
+
+        var healthReadyUnavailableExample = healthReadyResponses
+            .GetProperty("503")
+            .GetProperty("content")
+            .GetProperty("application/json")
+            .GetProperty("example");
+
+        Assert.Equal("SERVICE_UNAVAILABLE", healthReadyUnavailableExample.GetProperty("errorCode").GetString());
+
         var tablesListSuccessExample = root
             .GetProperty("paths")
             .GetProperty("/api/v1/tables")
@@ -226,7 +260,12 @@ public sealed class SwaggerApiIntegrationTests
         var paths = document.RootElement.GetProperty("paths");
         foreach (var path in paths.EnumerateObject())
         {
-            if (!path.Name.StartsWith("/api/v1/", StringComparison.Ordinal) && path.Name != "/health")
+            if (
+                !path.Name.StartsWith("/api/v1/", StringComparison.Ordinal)
+                && path.Name != "/health"
+                && path.Name != "/health/live"
+                && path.Name != "/health/ready"
+            )
                 continue;
 
             foreach (var operation in path.Value.EnumerateObject())

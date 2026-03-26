@@ -22,10 +22,7 @@ public sealed class OrdersApiIntegrationTests
         using var client = factory.CreateClient();
         var tableId = await CreateTableAsync(client, "ORD-A01");
 
-        var createResponse = await client.PostAsJsonAsync(
-            "/api/v1/orders",
-            new CreateOrderRequest(tableId)
-        );
+        var createResponse = await PostCreateOrderAsync(client, tableId, "create-ord-a01");
 
         Assert.Equal(HttpStatusCode.Created, createResponse.StatusCode);
 
@@ -103,13 +100,121 @@ public sealed class OrdersApiIntegrationTests
     }
 
     [Fact]
+    public async Task Create_order_with_same_key_and_different_payload_should_return_conflict()
+    {
+        await using var factory = new TestApiFactory();
+        using var client = factory.CreateClient();
+        var firstTableId = await CreateTableAsync(client, "ORD-A02B");
+        var secondTableId = await CreateTableAsync(client, "ORD-A02C");
+
+        using var first = new HttpRequestMessage(HttpMethod.Post, "/api/v1/orders")
+        {
+            Content = JsonContent.Create(new CreateOrderRequest(firstTableId))
+        };
+        first.Headers.Add("Idempotency-Key", "same-key-different-payload");
+
+        using var second = new HttpRequestMessage(HttpMethod.Post, "/api/v1/orders")
+        {
+            Content = JsonContent.Create(new CreateOrderRequest(secondTableId))
+        };
+        second.Headers.Add("Idempotency-Key", "same-key-different-payload");
+
+        var firstResponse = await client.SendAsync(first);
+        var secondResponse = await client.SendAsync(second);
+
+        Assert.Equal(HttpStatusCode.Created, firstResponse.StatusCode);
+        Assert.Equal(HttpStatusCode.Conflict, secondResponse.StatusCode);
+
+        var body = await secondResponse.Content.ReadFromJsonAsync<ApiErrorResponse>(JsonOptions);
+        Assert.NotNull(body);
+        Assert.Equal(ApplicationErrorCodes.IdempotencyKeyPayloadMismatch, body.ErrorCode);
+        Assert.Equal(
+            "Idempotency-Key has already been used with a different request payload.",
+            body.Message
+        );
+    }
+
+    [Fact]
+    public async Task Create_order_with_same_key_concurrently_should_return_same_order()
+    {
+        await using var factory = new TestApiFactory();
+        using var client = factory.CreateClient();
+        var tableId = await CreateTableAsync(client, "ORD-A02D");
+
+        async Task<HttpResponseMessage> SendAsync()
+        {
+            using var request = new HttpRequestMessage(HttpMethod.Post, "/api/v1/orders")
+            {
+                Content = JsonContent.Create(new CreateOrderRequest(tableId))
+            };
+            request.Headers.Add("Idempotency-Key", "same-key-concurrent");
+            return await client.SendAsync(request);
+        }
+
+        var responses = await Task.WhenAll(SendAsync(), SendAsync());
+
+        Assert.All(responses, response => Assert.Equal(HttpStatusCode.Created, response.StatusCode));
+
+        var bodies = await Task.WhenAll(
+            responses[0].Content.ReadFromJsonAsync<CreateOrderResponse>(JsonOptions),
+            responses[1].Content.ReadFromJsonAsync<CreateOrderResponse>(JsonOptions)
+        );
+
+        Assert.NotNull(bodies[0]);
+        Assert.NotNull(bodies[1]);
+        Assert.Equal(bodies[0]!.OrderId, bodies[1]!.OrderId);
+    }
+
+    [Fact]
+    public async Task Create_order_with_same_key_concurrently_should_remain_deterministic_across_runs()
+    {
+        await using var factory = new TestApiFactory();
+        using var client = factory.CreateClient();
+
+        async Task<Guid> RunBurstAsync(string tableCode, string key)
+        {
+            var tableId = await CreateTableAsync(client, tableCode);
+
+            async Task<HttpResponseMessage> SendAsync()
+            {
+                using var request = new HttpRequestMessage(HttpMethod.Post, "/api/v1/orders")
+                {
+                    Content = JsonContent.Create(new CreateOrderRequest(tableId))
+                };
+                request.Headers.Add("Idempotency-Key", key);
+                return await client.SendAsync(request);
+            }
+
+            var responses = await Task.WhenAll(SendAsync(), SendAsync(), SendAsync());
+            Assert.All(responses, response => Assert.Equal(HttpStatusCode.Created, response.StatusCode));
+
+            var bodies = await Task.WhenAll(
+                responses[0].Content.ReadFromJsonAsync<CreateOrderResponse>(JsonOptions),
+                responses[1].Content.ReadFromJsonAsync<CreateOrderResponse>(JsonOptions),
+                responses[2].Content.ReadFromJsonAsync<CreateOrderResponse>(JsonOptions)
+            );
+
+            Assert.All(bodies, body => Assert.NotNull(body));
+            Assert.True(bodies.Select(x => x!.OrderId).Distinct().Count() == 1);
+            return bodies[0]!.OrderId;
+        }
+
+        var firstOrderId = await RunBurstAsync("ORD-A02E", "same-key-deterministic-1");
+        var secondOrderId = await RunBurstAsync("ORD-A02F", "same-key-deterministic-2");
+
+        Assert.NotEqual(Guid.Empty, firstOrderId);
+        Assert.NotEqual(Guid.Empty, secondOrderId);
+        Assert.NotEqual(firstOrderId, secondOrderId);
+    }
+
+    [Fact]
     public async Task Add_item_with_invalid_payload_should_return_specific_error_code()
     {
         await using var factory = new TestApiFactory();
         using var client = factory.CreateClient();
         var tableId = await CreateTableAsync(client, "ORD-A03");
 
-        var createResponse = await client.PostAsJsonAsync("/api/v1/orders", new CreateOrderRequest(tableId));
+        var createResponse = await PostCreateOrderAsync(client, tableId, "create-ord-a03");
         var created = await createResponse.Content.ReadFromJsonAsync<CreateOrderResponse>(JsonOptions);
         Assert.NotNull(created);
 
@@ -138,7 +243,7 @@ public sealed class OrdersApiIntegrationTests
         await using var factory = new TestApiFactory();
         using var client = factory.CreateClient();
 
-        var response = await client.PostAsJsonAsync("/api/v1/orders", new CreateOrderRequest(Guid.Empty));
+        var response = await PostCreateOrderAsync(client, Guid.Empty, "empty-table-id");
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
 
@@ -158,6 +263,7 @@ public sealed class OrdersApiIntegrationTests
         {
             Content = new StringContent(string.Empty, Encoding.UTF8, "application/json")
         };
+        request.Headers.Add("Idempotency-Key", "missing-body-key");
 
         var response = await client.SendAsync(request);
 
@@ -179,6 +285,7 @@ public sealed class OrdersApiIntegrationTests
         {
             Content = new StringContent("{", Encoding.UTF8, "application/json")
         };
+        request.Headers.Add("Idempotency-Key", "invalid-json-key");
 
         var response = await client.SendAsync(request);
 
@@ -200,6 +307,7 @@ public sealed class OrdersApiIntegrationTests
         {
             Content = new StringContent("{\"tableId\":\"not-a-guid\"}", Encoding.UTF8, "application/json")
         };
+        request.Headers.Add("Idempotency-Key", "invalid-table-id-key");
 
         var response = await client.SendAsync(request);
 
@@ -243,10 +351,7 @@ public sealed class OrdersApiIntegrationTests
         using var client = factory.CreateClient();
         var tableId = await CreateTableAsync(client, "ORD-A04");
 
-        var createResponse = await client.PostAsJsonAsync(
-            "/api/v1/orders",
-            new CreateOrderRequest(tableId)
-        );
+        var createResponse = await PostCreateOrderAsync(client, tableId, "create-ord-a04");
         var created = await createResponse.Content.ReadFromJsonAsync<CreateOrderResponse>(JsonOptions);
         Assert.NotNull(created);
 
@@ -342,15 +447,117 @@ public sealed class OrdersApiIntegrationTests
     }
 
     [Fact]
+    public async Task Concurrency_conflict_should_return_409_conflict_error_shape()
+    {
+        await using var factory = new TestApiFactory();
+        using var client = factory.CreateClient();
+
+        var response = await client.GetAsync("/test/conflict/concurrency");
+
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+
+        var body = await response.Content.ReadFromJsonAsync<ApiErrorResponse>(JsonOptions);
+        Assert.NotNull(body);
+        Assert.Equal(ApplicationErrorCodes.ConcurrencyConflict, body.ErrorCode);
+        Assert.Equal("The resource was modified by another request. Please retry.", body.Message);
+        Assert.False(string.IsNullOrWhiteSpace(body.TraceId));
+    }
+
+    [Fact]
+    public async Task Configuration_invalid_should_not_leak_internal_detail()
+    {
+        await using var factory = new TestApiFactory();
+        using var client = factory.CreateClient();
+
+        var response = await client.GetAsync("/test/configuration-invalid");
+
+        Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
+
+        var body = await response.Content.ReadFromJsonAsync<ApiErrorResponse>(JsonOptions);
+        Assert.NotNull(body);
+        Assert.Equal(ApplicationErrorCodes.ConfigurationInvalid, body.ErrorCode);
+        Assert.Equal("Configuration is invalid.", body.Message);
+        Assert.DoesNotContain(
+            "INTERNAL_CONFIGURATION_PATH_MUST_NOT_LEAK",
+            body.Message,
+            StringComparison.Ordinal
+        );
+        Assert.False(string.IsNullOrWhiteSpace(body.TraceId));
+    }
+
+    [Fact]
+    public async Task Audit_log_immutable_should_not_leak_internal_detail()
+    {
+        await using var factory = new TestApiFactory();
+        using var client = factory.CreateClient();
+
+        var response = await client.GetAsync("/test/audit-log-immutable");
+
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+
+        var body = await response.Content.ReadFromJsonAsync<ApiErrorResponse>(JsonOptions);
+        Assert.NotNull(body);
+        Assert.Equal(ApplicationErrorCodes.AuditLogImmutable, body.ErrorCode);
+        Assert.Equal("AuditLogs are immutable and may only be appended.", body.Message);
+        Assert.DoesNotContain(
+            "INTERNAL_AUDIT_IMMUTABILITY_DETAIL_MUST_NOT_LEAK",
+            body.Message,
+            StringComparison.Ordinal
+        );
+        Assert.False(string.IsNullOrWhiteSpace(body.TraceId));
+    }
+
+    [Fact]
+    public async Task Timeout_should_return_service_unavailable_without_leaking_internal_detail()
+    {
+        await using var factory = new TestApiFactory();
+        using var client = factory.CreateClient();
+
+        var response = await client.GetAsync("/test/timeout");
+
+        Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
+
+        var body = await response.Content.ReadFromJsonAsync<ApiErrorResponse>(JsonOptions);
+        Assert.NotNull(body);
+        Assert.Equal(ApplicationErrorCodes.OperationTimedOut, body.ErrorCode);
+        Assert.Equal("The operation timed out. Please retry.", body.Message);
+        Assert.DoesNotContain(
+            "INTERNAL_TIMEOUT_DETAIL_MUST_NOT_LEAK",
+            body.Message,
+            StringComparison.Ordinal
+        );
+        Assert.False(string.IsNullOrWhiteSpace(body.TraceId));
+    }
+
+    [Fact]
+    public async Task Database_unavailable_should_return_service_unavailable_without_leaking_internal_detail()
+    {
+        await using var factory = new TestApiFactory();
+        using var client = factory.CreateClient();
+
+        var response = await client.GetAsync("/test/database-unavailable");
+
+        Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
+
+        var body = await response.Content.ReadFromJsonAsync<ApiErrorResponse>(JsonOptions);
+        Assert.NotNull(body);
+        Assert.Equal(ApplicationErrorCodes.DatabaseUnavailable, body.ErrorCode);
+        Assert.Equal("Database is temporarily unavailable.", body.Message);
+        Assert.DoesNotContain(
+            "INTERNAL_DATABASE_DETAIL_MUST_NOT_LEAK",
+            body.Message,
+            StringComparison.Ordinal
+        );
+        Assert.False(string.IsNullOrWhiteSpace(body.TraceId));
+    }
+
+    [Fact]
     public async Task Create_order_with_unknown_table_should_return_table_not_found()
     {
         await using var factory = new TestApiFactory();
         using var client = factory.CreateClient();
 
-        var response = await client.PostAsJsonAsync(
-            "/api/v1/orders",
-            new CreateOrderRequest(Guid.NewGuid())
-        );
+        var response = await PostCreateOrderAsync(client, Guid.NewGuid(), "unknown-table-key");
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
 
@@ -370,10 +577,7 @@ public sealed class OrdersApiIntegrationTests
         var disableResponse = await client.PatchAsync($"/api/v1/tables/{tableId}/disable", null);
         Assert.Equal(HttpStatusCode.NoContent, disableResponse.StatusCode);
 
-        var response = await client.PostAsJsonAsync(
-            "/api/v1/orders",
-            new CreateOrderRequest(tableId)
-        );
+        var response = await PostCreateOrderAsync(client, tableId, "inactive-table-key");
 
         Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
 
@@ -381,6 +585,59 @@ public sealed class OrdersApiIntegrationTests
         Assert.NotNull(body);
         Assert.Equal(ApplicationErrorCodes.TableInactive, body.ErrorCode);
         Assert.Equal("Table is inactive.", body.Message);
+    }
+
+    [Fact]
+    public async Task Create_order_without_idempotency_key_should_return_specific_validation_error()
+    {
+        await using var factory = new TestApiFactory();
+        using var client = factory.CreateClient();
+        var tableId = await CreateTableAsync(client, "ORD-A06");
+
+        var response = await client.PostAsJsonAsync("/api/v1/orders", new CreateOrderRequest(tableId));
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+
+        var body = await response.Content.ReadFromJsonAsync<ApiErrorResponse>(JsonOptions);
+        Assert.NotNull(body);
+        Assert.Equal(ApplicationErrorCodes.IdempotencyKeyRequired, body.ErrorCode);
+        Assert.Equal("Idempotency-Key header is required.", body.Message);
+    }
+
+    [Fact]
+    public async Task Create_order_with_blank_idempotency_key_should_return_specific_validation_error()
+    {
+        await using var factory = new TestApiFactory();
+        using var client = factory.CreateClient();
+        var tableId = await CreateTableAsync(client, "ORD-A07");
+
+        using var request = new HttpRequestMessage(HttpMethod.Post, "/api/v1/orders")
+        {
+            Content = JsonContent.Create(new CreateOrderRequest(tableId))
+        };
+        request.Headers.Add("Idempotency-Key", "   ");
+
+        var response = await client.SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+
+        var body = await response.Content.ReadFromJsonAsync<ApiErrorResponse>(JsonOptions);
+        Assert.NotNull(body);
+        Assert.Equal(ApplicationErrorCodes.IdempotencyKeyRequired, body.ErrorCode);
+        Assert.Equal("Idempotency-Key header is required.", body.Message);
+    }
+
+    private static async Task<HttpResponseMessage> PostCreateOrderAsync(
+        HttpClient client,
+        Guid tableId,
+        string idempotencyKey)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Post, "/api/v1/orders")
+        {
+            Content = JsonContent.Create(new CreateOrderRequest(tableId))
+        };
+        request.Headers.Add("Idempotency-Key", idempotencyKey);
+        return await client.SendAsync(request);
     }
 
     private static async Task<Guid> CreateTableAsync(HttpClient client, string code)

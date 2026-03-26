@@ -1,0 +1,17 @@
+[
+  {
+    "status": "firing",
+    "labels": {
+      "alertname": "OrderHereBackendReadinessFailing",
+      "severity": "critical",
+      "service": "order-here-backend"
+    },
+    "annotations": {
+      "summary": "Backend readiness probe is failing",
+      "description": "/health/ready has been failing for 2 minutes."
+    },
+    "startsAt": "2026-03-26T10:00:00Z",
+    "endsAt": "0001-01-01T00:00:00Z",
+    "generatorURL": "http://localhost:9090/graph?g0.expr=probe_success"
+  }
+]
