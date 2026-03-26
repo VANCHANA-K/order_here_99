@@ -48,7 +48,9 @@ public sealed class ErrorCodeCatalogUnitTests
     [Fact]
     public void Api_error_semantics_doc_should_reference_standard_catalog_examples()
     {
-        var docPath = "/Users/viic/Desktop/order_here/order_here_backend/docs/API_ERROR_SEMANTICS.md";
+        var docPath = Path.GetFullPath(
+            Path.Combine(AppContext.BaseDirectory, "../../../../../docs/API_ERROR_SEMANTICS.md")
+        );
         var content = File.ReadAllText(docPath);
 
         Assert.Contains("ORDER_NOT_FOUND", content, StringComparison.Ordinal);
